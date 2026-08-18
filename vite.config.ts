@@ -7,6 +7,7 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    allowedHosts: true,
     proxy: {
       '/cursor-api': {
         target: 'https://api.cursor.com',
@@ -16,6 +17,8 @@ export default defineConfig({
     },
   },
   preview: {
+    host: true,
+    allowedHosts: true,
     proxy: {
       '/cursor-api': {
         target: 'https://api.cursor.com',
