@@ -1,3 +1,4 @@
+import { asset } from '../lib/assets'
 import type { LoreEntry } from '../types'
 
 export const lore: LoreEntry[] = [
@@ -9,7 +10,7 @@ export const lore: LoreEntry[] = [
     summary: 'A small border kingdom whose health is bound to the Waking Song and the Forest of Echoes.',
     body: 'Eldara sits between greater, noisier realms and has survived by being easy to forget. Its wealth is green: timber, mills, song-magic older than spellbooks. When the Waking Song thins, harvests stall, animals go quiet, and twilight fog drinks color from the leaves. The people are not chosen heroes by blood. They are a chorus. Capital-in-all-but-name is a scatter of villages; Windfall is the one that still keeps a sage.',
     relatedIds: ['windfall', 'forest', 'waking-song', 'vaelith'],
-    image: '/art/map-eldara-region.jpg',
+    image: asset('art/map-eldara-region.jpg'),
   },
   {
     id: 'windfall',
@@ -20,7 +21,7 @@ export const lore: LoreEntry[] = [
     body: 'Thatched cottages, a wooden mill, and a central stone well where Luma often rests. The harvest festival should be underway; instead pennants hang still. Rumors: a missing miller’s child, tusker drums, well water that tastes of old coins. Shops: a general store (rations, torches, 50 feet of rope), a tinker who can mend a flute, and a tavern called The Second Note. Nerin lives in a lean-to behind the well, not a tower.',
     secrets: 'If the Twilight Clock reaches 4, the well goes dark and the miller’s child is confirmed missing into the fog — a sequel hook, not a side quest to solve tonight.',
     relatedIds: ['nerin', 'luma', 'echo-flute'],
-    image: '/art/map-windfall.jpg',
+    image: asset('art/map-windfall.jpg'),
   },
   {
     id: 'forest',
@@ -30,7 +31,7 @@ export const lore: LoreEntry[] = [
     summary: 'A woodland that returns sound a breath late. Three shrine trails teach Courage, Wisdom, and Power.',
     body: 'The Echoes are not a maze meant to humiliate. They are a listening test. False trails echo louder. The true path is quieter. Standing stones mark three virtues. Mossfolk live in the roots. After dusk, resting here advances the Twilight Clock. The gold trail from Windfall is Luma’s gift; it fades if the party splits for more than ten minutes.',
     relatedIds: ['mossfolk', 'shrine-first-verse', 'tuskers'],
-    image: '/art/map-forest-echoes.jpg',
+    image: asset('art/map-forest-echoes.jpg'),
   },
   {
     id: 'temple',
@@ -41,7 +42,7 @@ export const lore: LoreEntry[] = [
     body: 'Stone seed architecture — masonry and roots grown together. Rooms: vine door, Hall of Kindled Breath, Gloom Span, Statues of True Green, barracks of the Captain of Bone, inner sanctum of the Sleeping Construct. Small keys open side treasures (Heart Bloom). Boss Key opens the sanctum. The temple was staffed by living wardens, not priests of a distant goddess. It is a tool for keeping a song in the land, not a tomb for a king.',
     secrets: 'A Quiet Roots alcove (mossfolk mark) hides a small key if the party was kind. Captain Sera Valen can be named and laid to rest.',
     relatedIds: ['construct', 'captain', 'heart-bloom'],
-    image: '/art/map-temple-green-blade.jpg',
+    image: asset('art/map-temple-green-blade.jpg'),
   },
   {
     id: 'plateau',
@@ -51,7 +52,7 @@ export const lore: LoreEntry[] = [
     summary: 'High mesa with three standing stones and a cracked dais. The Waking Song must be finished here.',
     body: 'Pale stone above a sea of forest. Gold, teal, and crimson standing stones correspond to Courage, Wisdom, and Power. The circular dais is Vaelith’s lair; while he stands on it he can step between moments. The third verse is not stored in an object. It is made when the party gives something away.',
     relatedIds: ['vaelith', 'waking-song', 'virtues'],
-    image: '/art/map-sacred-plateau.jpg',
+    image: asset('art/map-sacred-plateau.jpg'),
   },
   {
     id: 'vaelith-crown',
@@ -70,7 +71,7 @@ export const lore: LoreEntry[] = [
     body: 'Nerin is about seventy, silver-green hair, travel robes, not a mysterious hermit in a tower. They trained as a warden-sage and failed to notice Vaelith’s despair until the song was already thinning. They will not enter the temple — shame and shaking hands. They tell the truth: this is not a chosen-one story. Voice: warm, precise, never cute. They can identify twilight creatures on sight.',
     secrets: 'Nerin once loved Sera Valen, the Captain of Bone. If the party brings Sera’s name home, Nerin weeps once, then bakes bread.',
     relatedIds: ['luma', 'echo-flute', 'captain'],
-    image: '/art/portrait-sage-nerin.jpg',
+    image: asset('art/portrait-sage-nerin.jpg'),
   },
   {
     id: 'luma',
@@ -80,7 +81,7 @@ export const lore: LoreEntry[] = [
     summary: 'A teal fairy-spark, last uncaught measure of the Waking Song. Yes/no chimes. Brave and terrified.',
     body: 'Luma is not a talker. She chimes: bright yes, dull no, split tone for complicated. Once per scene she can grant a PC advantage by flaring. She roosts in a collar, a flute case, or Mira’s satchel. If she drops to 0 hp (AC 15, 8 hp), she does not die — she goes dim for a scene and the Clock advances 1. She loves jokes that are also true.',
     relatedIds: ['nerin', 'waking-song'],
-    image: '/art/portrait-luma.jpg',
+    image: asset('art/portrait-luma.jpg'),
   },
   {
     id: 'mossfolk',
@@ -118,7 +119,7 @@ export const lore: LoreEntry[] = [
     body: 'Young face, exhausted, antlered gold-black plate. Not a pig-demon and not a cartoon. His thesis: every generation treats the Green as a prize, so he moved the song somewhere nothing ages and nothing is asked. He wants the party to finish the song so he can take it whole. Redeemable below 30 hp if the song has at least three successes. Otherwise he becomes a shadow-beast in phase 2. Voice: quiet, reasonable, then suddenly vast.',
     secrets: 'His true name as a warden was Vael of the North Stair. Nerin might remember if asked after the captain is named.',
     relatedIds: ['plateau', 'waking-song', 'wardens'],
-    image: '/art/portrait-vaelith.jpg',
+    image: asset('art/portrait-vaelith.jpg'),
   },
   {
     id: 'captain',

@@ -56,11 +56,14 @@ export function JournalView() {
             ))}
           </ul>
         )}
-        <h2>How to keep this in the cloud</h2>
+        <h2>Play from any machine</h2>
         <p>
-          Sagekeep stores the table in this browser. Commit the repo, push, and open it on another machine — the
-          <em> module</em> travels with git. Party HP and invented lore stay on the device unless you copy the Chronicle
-          into your notes. Continue worldbuilding with a Cursor Cloud Agent from any signed-in device at{' '}
+          Sagekeep is hosted at{' '}
+          <a href="https://ajmanry.github.io/DNDApp/" target="_blank" rel="noreferrer">
+            ajmanry.github.io/DNDApp
+          </a>
+          . Open that URL in any browser — no download. Party HP and invented lore are saved in that browser’s
+          localStorage. Continue worldbuilding with a Cursor Cloud Agent at{' '}
           <a href="https://cursor.com/agents" target="_blank" rel="noreferrer">
             cursor.com/agents
           </a>

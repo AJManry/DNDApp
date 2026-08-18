@@ -5,6 +5,7 @@ import { OracleView } from './views/OracleView'
 import { PartyView } from './views/PartyView'
 import { PlayView } from './views/PlayView'
 import { SagekeepProvider, useSagekeep } from './state/store'
+import { asset } from './lib/assets'
 import type { TabId } from './types'
 
 const TABS: { id: TabId; label: string; hint: string }[] = [
@@ -37,7 +38,7 @@ function Shell() {
     <div className="app">
       <aside className="rail">
         <div className="brand">
-          <img src="/art/sagekeep-emblem.jpg" alt="" className="emblem" />
+          <img src={asset('art/sagekeep-emblem.jpg')} alt="" className="emblem" />
           <div>
             <div className="brand-name">Sagekeep</div>
             <div className="brand-tag">Dungeon Master’s table</div>

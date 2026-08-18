@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { campaignMaps } from '../data/maps'
+import { asset } from '../lib/assets'
 import { makeGeneratedMap, svgMap } from '../lib/mapStudio'
 import { useSagekeep } from '../state/store'
 
@@ -48,7 +49,7 @@ export function MapsView() {
           {latest ? (
             <img src={latest.imageUrl} alt={latest.prompt} />
           ) : (
-            <img src="/art/map-eldara-region.jpg" alt="Eldara" />
+            <img src={asset('art/map-eldara-region.jpg')} alt="Eldara" />
           )}
           <figcaption>
             {latest ? (

@@ -2,6 +2,14 @@
 
 A Dungeon Master’s table for running — and building — a world. Search lore like you would ask Cursor, paint maps from a prompt, track inventory and skills, and play a complete Zelda-inspired 3-hour one-shot.
 
+## Play in a browser
+
+No install. Open:
+
+**https://ajmanry.github.io/DNDApp/**
+
+GitHub Actions publishes that URL on every push. If the first deploy is waiting, enable **Settings → Pages → Source: GitHub Actions** on the repo, then re-run the **Deploy Sagekeep to GitHub Pages** workflow.
+
 ## The Song That Wakes the Green
 
 Original homage (not Nintendo IP): 3rd-level D&D 5e, 3–5 players, about three hours.
@@ -22,9 +30,9 @@ Pregenerated adventurers, stat blocks, boxed text, and a Twilight Clock are buil
 - **Table** — scene runner with 3-hour pacing, dice, initiative, DM secrets  
 - **Chronicle** — notes, recap from completed scenes, custom lore
 
-Table state lives in this browser (`localStorage`). The module itself travels with git.
+Table state lives in this browser (`localStorage`). You can play from any machine at the public URL above.
 
-## Run
+## Run locally
 
 ```bash
 npm install
@@ -37,7 +45,3 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 npm test
 npm run build
 ```
-
-## Switching machines
-
-Push this repo and clone it elsewhere. Use a Cursor Cloud Agent from any signed-in device at [cursor.com/agents](https://cursor.com/agents) if you want help expanding Eldara.

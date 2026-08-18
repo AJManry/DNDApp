@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { allLore } from '../data/corpus'
+import { asset } from '../lib/assets'
 import { searchLore } from '../lib/search'
 import { useSagekeep } from '../state/store'
 import type { LoreKind } from '../types'
@@ -39,7 +40,7 @@ export function OracleView() {
     <div className="oracle">
       <div className="oracle-chat">
         <div className="oracle-intro">
-          <img src="/art/portrait-sage-nerin.jpg" alt="Sage Nerin" />
+          <img src={asset('art/portrait-sage-nerin.jpg')} alt="Sage Nerin" />
           <div>
             <h1>Oracle of Eldara</h1>
             <p>
