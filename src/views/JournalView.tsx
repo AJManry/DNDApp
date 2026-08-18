@@ -58,16 +58,13 @@ export function JournalView() {
         )}
         <h2>Play from any machine</h2>
         <p>
-          Sagekeep is hosted at{' '}
+          Sagekeep is built for the web. After GitHub Pages is enabled on this repo, play at{' '}
           <a href="https://ajmanry.github.io/DNDApp/" target="_blank" rel="noreferrer">
             ajmanry.github.io/DNDApp
           </a>
-          . Open that URL in any browser — no download. Party HP and invented lore are saved in that browser’s
-          localStorage. Continue worldbuilding with a Cursor Cloud Agent at{' '}
-          <a href="https://cursor.com/agents" target="_blank" rel="noreferrer">
-            cursor.com/agents
-          </a>
-          .
+          {' '}
+          from any machine — no download. Enable it under Settings → Pages → Deploy from branch
+          <code> gh-pages</code>. Party HP and invented lore are saved in that browser’s localStorage.
         </p>
         <p className="fineprint">{CAMPAIGN.inspiration}</p>
       </aside>

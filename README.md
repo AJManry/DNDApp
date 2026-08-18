@@ -4,11 +4,12 @@ A Dungeon Master’s table for running — and building — a world. Search lore
 
 ## Play in a browser
 
-No install. Open:
+The built site is published on the `gh-pages` branch. After you enable GitHub Pages once, it stays live for any machine:
 
-**https://ajmanry.github.io/DNDApp/**
-
-GitHub Actions publishes that URL on every push. If the first deploy is waiting, enable **Settings → Pages → Source: GitHub Actions** on the repo, then re-run the **Deploy Sagekeep to GitHub Pages** workflow.
+1. Open [DNDApp Pages settings](https://github.com/AJManry/DNDApp/settings/pages)
+2. Under **Build and deployment**, set **Source** to **Deploy from a branch**
+3. Set the branch to **gh-pages** / **/ (root)** and click **Save**
+4. Wait a minute, then play at **https://ajmanry.github.io/DNDApp/**
 
 ## The Song That Wakes the Green
 
