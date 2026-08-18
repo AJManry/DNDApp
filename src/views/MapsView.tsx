@@ -7,7 +7,9 @@ import { useHyrule } from '../state/store'
 export function MapsView() {
   const { state, dispatch } = useHyrule()
   const pending = state.oracleThread.map((m) => m.mapPrompt).filter((p): p is string => Boolean(p))
-  const [prompt, setPrompt] = useState(pending.at(-1) ?? 'Lost Woods shrine with three Triforce stones and a gold fairy path')
+  const [prompt, setPrompt] = useState(
+    pending.at(-1) ?? 'Hyrule Field at golden hour, sky islands, Sheikah shrine, cream parchment map',
+  )
   const latest = state.maps[0]
   const svg = useMemo(() => svgMap(latest?.prompt ?? prompt), [latest?.prompt, prompt])
 
@@ -24,8 +26,8 @@ export function MapsView() {
           <p className="kicker">Cartographer</p>
           <h1>Paint the world from a prompt</h1>
           <p className="lede">
-            Describe a place. Hyrule renders a graphic painting (via a cloud image model) and an inked table map you
-            can use immediately. Campaign maps for The Song of Time live in the gallery below.
+            Describe a place. Maps render in a Breath of the Wild / Tears of the Kingdom palette — golden field-hour,
+            Sheikah cyan, Zonai teal-gold — plus an inked table map you can use immediately.
           </p>
         </div>
         <form
@@ -38,7 +40,7 @@ export function MapsView() {
           <input
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="A cliffside village under a waterfall, dusk, gold lanterns…"
+            placeholder="A sky island shrine at golden hour, Zonai stone, cream map…"
             aria-label="Map prompt"
           />
           <button type="submit">Create map</button>

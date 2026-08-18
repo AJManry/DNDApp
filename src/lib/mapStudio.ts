@@ -49,9 +49,9 @@ export function detectBiome(prompt: string): Biome {
 export function enhancePrompt(prompt: string): string {
   const biome = detectBiome(prompt)
   return [
-    'Hand-painted fantasy cartography and cinematic concept art of Hyrule,',
-    'The Legend of Zelda world: Triforce gold, Kokiri green, twilight purple,',
-    'gold ink, forest green watercolor, aged parchment, Hylian architecture,',
+    'Hand-painted Breath of the Wild / Tears of the Kingdom cartography of Hyrule,',
+    'golden Hyrule Field hour, Sheikah cyan, Zonai teal-gold, cream parchment, dusk amber, gloom magenta,',
+    'no heavy forest-green wash, sky-island light, weathered stone shrines,',
     `biome: ${biome}.`,
     prompt.trim(),
     'Highly detailed, readable landmarks, ornate vine compass rose.',
@@ -87,18 +87,18 @@ export function extractLabels(prompt: string): string[] {
 }
 
 const BIOME_COLORS: Record<Biome, { fill: string; ink: string; water: string }> = {
-  forest: { fill: '#1d3a28', ink: '#d4e8c8', water: '#3d6b7a' },
-  village: { fill: '#3a4a28', ink: '#f0e2b8', water: '#4a7a88' },
+  forest: { fill: '#4a5340', ink: '#f0e2b8', water: '#3d7a88' },
+  village: { fill: '#5a4030', ink: '#f4e0b0', water: '#4a7a88' },
   dungeon: { fill: '#2a2420', ink: '#e6d2a8', water: '#3a4a55' },
-  temple: { fill: '#243428', ink: '#d4c48a', water: '#3a6860' },
-  mountain: { fill: '#2c3340', ink: '#e8e4dc', water: '#5a7388' },
+  temple: { fill: '#3a4038', ink: '#e8dcc0', water: '#3d9b94' },
+  mountain: { fill: '#3a4858', ink: '#e8e4dc', water: '#5a8aa0' },
   coast: { fill: '#1c3a44', ink: '#f2e6c4', water: '#2a6a88' },
-  desert: { fill: '#5a4630', ink: '#f4e0b0', water: '#6a8aa0' },
-  swamp: { fill: '#243428', ink: '#c6d4a0', water: '#2a5048' },
+  desert: { fill: '#8a5a30', ink: '#f4e0b0', water: '#6a8aa0' },
+  swamp: { fill: '#3a4030', ink: '#e6d4a8', water: '#3a5a58' },
   castle: { fill: '#2a2834', ink: '#e8dcc0', water: '#4a6078' },
   cave: { fill: '#1a1816', ink: '#d8c8a8', water: '#2a3840' },
-  region: { fill: '#24382c', ink: '#ead9a8', water: '#3a7080' },
-  twilight: { fill: '#2a1e38', ink: '#e4c8a0', water: '#4a3a68' },
+  region: { fill: '#5a5340', ink: '#ead9a8', water: '#3d7a88' },
+  twilight: { fill: '#4a2030', ink: '#e4c8a0', water: '#6b1f3a' },
 }
 
 function hash(s: string): number {
@@ -166,8 +166,8 @@ export function svgMap(prompt: string, width = 640, height = 400): string {
         <feColorMatrix in="n" type="luminanceToAlpha"/>
       </filter>
     </defs>
-    <rect width="${width}" height="${height}" fill="#cbb892"/>
-    <rect x="10" y="10" width="${width - 20}" height="${height - 20}" fill="#e6d3a8" stroke="#6b4f2a" stroke-width="4"/>
+    <rect width="${width}" height="${height}" fill="#c4b392"/>
+    <rect x="10" y="10" width="${width - 20}" height="${height - 20}" fill="#e8dcc0" stroke="#8a6a3a" stroke-width="4"/>
     <rect x="18" y="18" width="${width - 36}" height="${height - 36}" fill="${colors.water}" opacity="0.25"/>
     ${blobs.join('\n')}
     <path d="${pathPts.join(' ')}" fill="none" stroke="#c9a227" stroke-width="3" stroke-linecap="round" opacity="0.9"/>

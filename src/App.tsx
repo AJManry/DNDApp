@@ -41,7 +41,7 @@ function Shell() {
           <img src={asset('art/hyrule-emblem.jpg')} alt="" className="emblem" />
           <div>
             <div className="brand-name">Hyrule</div>
-            <div className="brand-tag">Hero’s table</div>
+            <div className="brand-tag">Purah Pad</div>
           </div>
         </div>
         <nav className="tabs">
