@@ -7,6 +7,22 @@ export default defineConfig({
   server: {
     host: true,
     port: 5173,
+    proxy: {
+      '/cursor-api': {
+        target: 'https://api.cursor.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/cursor-api/, ''),
+      },
+    },
+  },
+  preview: {
+    proxy: {
+      '/cursor-api': {
+        target: 'https://api.cursor.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/cursor-api/, ''),
+      },
+    },
   },
   test: {
     environment: 'node',

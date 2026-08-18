@@ -1,4 +1,5 @@
 import type { LoreEntry, OracleMessage } from '../types'
+import { isCursorProvider, runCursorOracle } from './cursorAgent'
 import { completeChat, type ChatMessage, type LlmSettings } from './llm'
 import { searchLore, tokenize } from './search'
 
@@ -200,6 +201,7 @@ export interface SageAskResult {
   created?: LoreEntry
   createdLoreId?: string
   mapPrompt?: string
+  cursorAgentId?: string
 }
 
 export async function askSage(opts: {
@@ -210,7 +212,15 @@ export async function askSage(opts: {
   settings: LlmSettings
 }): Promise<SageAskResult> {
   const packed = buildSageMessages(opts)
-  const raw = await completeChat(packed.messages, opts.settings)
+  let raw: string
+  let cursorAgentId: string | undefined
+  if (isCursorProvider(opts.settings)) {
+    const cursor = await runCursorOracle(packed.messages, opts.settings)
+    raw = cursor.text
+    cursorAgentId = cursor.agentId
+  } else {
+    raw = await completeChat(packed.messages, opts.settings)
+  }
   const parsed = parseSageReply(raw)
   let created: LoreEntry | undefined
   if (parsed.lore) {
@@ -232,5 +242,6 @@ export async function askSage(opts: {
     created,
     createdLoreId: created?.id,
     mapPrompt: mapPrompt || undefined,
+    cursorAgentId,
   }
 }

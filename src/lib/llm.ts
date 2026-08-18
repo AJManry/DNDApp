@@ -1,7 +1,14 @@
+import { isCursorProvider, runCursorOracle } from './cursorAgent'
+
 export interface LlmSettings {
   baseUrl: string
   apiKey: string
   model: string
+  cursorAgentId?: string
+  cursorRepoUrl?: string
+  cursorRef?: string
+  cursorSearchRepo?: boolean
+  cursorProxyUrl?: string
 }
 
 export const LLM_STORAGE_KEY = 'sagekeep-llm-v1'
@@ -10,8 +17,14 @@ export const POLLINATIONS_CHAT_URL = 'https://text.pollinations.ai/openai'
 
 export const LLM_PRESETS: { id: string; label: string; baseUrl: string; model: string }[] = [
   {
+    id: 'cursor',
+    label: 'Cursor (your tokens + search)',
+    baseUrl: 'cursor://cloud-agent',
+    model: '',
+  },
+  {
     id: 'puter',
-    label: 'Puter (browser, no key)',
+    label: 'Puter (browser, no Cursor key)',
     baseUrl: 'puter://chat',
     model: 'gpt-4o-mini',
   },
@@ -43,17 +56,37 @@ export const LLM_PRESETS: { id: string; label: string; baseUrl: string; model: s
 
 export function defaultLlmSettings(): LlmSettings {
   return {
-    baseUrl: 'puter://chat',
+    baseUrl: 'cursor://cloud-agent',
     apiKey: '',
-    model: 'gpt-4o-mini',
+    model: '',
+    cursorAgentId: '',
+    cursorRepoUrl: 'https://github.com/AJManry/DNDApp',
+    cursorRef: 'cursor/sagekeep-dm-app-cee4',
+    cursorSearchRepo: true,
+    cursorProxyUrl: '',
   }
+}
+
+export function normalizeLlmSettings(partial?: Partial<LlmSettings> | null): LlmSettings {
+  const base = defaultLlmSettings()
+  if (!partial) return base
+  const merged: LlmSettings = {
+    ...base,
+    ...partial,
+    cursorSearchRepo: partial.cursorSearchRepo ?? base.cursorSearchRepo,
+  }
+  const usedOldDefault = partial.baseUrl === 'puter://chat' && !partial.apiKey?.trim()
+  if (usedOldDefault) {
+    return { ...base, apiKey: '', cursorAgentId: merged.cursorAgentId }
+  }
+  return merged
 }
 
 export function loadLlmSettings(): LlmSettings {
   try {
     const raw = localStorage.getItem(LLM_STORAGE_KEY)
     if (!raw) return defaultLlmSettings()
-    return { ...defaultLlmSettings(), ...(JSON.parse(raw) as Partial<LlmSettings>) }
+    return normalizeLlmSettings(JSON.parse(raw) as Partial<LlmSettings>)
   } catch {
     return defaultLlmSettings()
   }
@@ -69,6 +102,10 @@ export interface ChatMessage {
 }
 
 export async function completeChat(messages: ChatMessage[], settings: LlmSettings): Promise<string> {
+  if (isCursorProvider(settings)) {
+    const result = await runCursorOracle(messages, settings)
+    return result.text
+  }
   const url = settings.baseUrl.trim() || 'puter://chat'
   if (settings.apiKey.trim()) {
     return completeOpenAI(messages, settings)
@@ -88,7 +125,7 @@ export async function completeChat(messages: ChatMessage[], settings: LlmSetting
         const a = err instanceof Error ? err.message : String(err)
         const b = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr)
         throw new Error(
-          `${a} ${b} Add a free Groq API key in Model settings if the built-in providers are busy.`,
+          `${a} ${b} Add a Cursor API key in Model settings to bill your Cursor tokens instead.`,
         )
       }
     }
@@ -105,7 +142,7 @@ export async function completeChat(messages: ChatMessage[], settings: LlmSetting
     errors.push(err instanceof Error ? err.message : String(err))
   }
   throw new Error(
-    `${errors.filter(Boolean).join(' ')} Add a free Groq API key in Model settings if the built-in providers are busy.`,
+    `${errors.filter(Boolean).join(' ')} Add a Cursor API key in Model settings to bill your Cursor tokens instead.`,
   )
 }
 

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { allLore } from '../data/corpus'
+import { buildCursorPrompt, cursorApiUrl, isCursorProvider } from './cursorAgent'
+import { normalizeLlmSettings } from './llm'
 import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages } from './sage'
 import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
@@ -84,6 +86,39 @@ describe('maps and dice', () => {
     const r2 = rollDice('2d6+1')
     expect(r2.result).toBeGreaterThanOrEqual(3)
     expect(r2.result).toBeLessThanOrEqual(13)
+  })
+})
+
+describe('cursor oracle', () => {
+  it('detects the Cursor provider and builds a read-only search prompt', () => {
+    expect(isCursorProvider({ baseUrl: 'cursor://cloud-agent' })).toBe(true)
+    expect(isCursorProvider({ baseUrl: 'puter://chat' })).toBe(false)
+    const prompt = buildCursorPrompt([{ role: 'user', content: 'Who is Luma?' }])
+    expect(prompt).toMatch(/READ-ONLY/)
+    expect(prompt).toMatch(/src\/data/)
+    expect(prompt).toMatch(/Who is Luma/)
+    expect(prompt).toMatch(/"answer"/)
+  })
+
+  it('routes Cursor API calls through the Vite proxy in dev', () => {
+    expect(cursorApiUrl('/v1/agents', { dev: true })).toBe('/cursor-api/v1/agents')
+    expect(cursorApiUrl('/v1/agents', { dev: false })).toBe('https://api.cursor.com/v1/agents')
+    expect(cursorApiUrl('/v1/me', { proxyUrl: 'https://proxy.example/cursor' })).toBe(
+      'https://proxy.example/cursor/v1/me',
+    )
+  })
+
+  it('migrates the old Puter default onto Cursor', () => {
+    const migrated = normalizeLlmSettings({ baseUrl: 'puter://chat', apiKey: '', model: 'gpt-4o-mini' })
+    expect(migrated.baseUrl).toBe('cursor://cloud-agent')
+    expect(migrated.cursorSearchRepo).toBe(true)
+    const groq = normalizeLlmSettings({
+      baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
+      apiKey: 'gsk_test',
+      model: 'llama-3.3-70b-versatile',
+    })
+    expect(groq.baseUrl).toContain('groq')
+    expect(groq.apiKey).toBe('gsk_test')
   })
 })
 

@@ -23,9 +23,18 @@ Original homage (not Nintendo IP): 3rd-level D&D 5e, 3–5 players, about three 
 
 Pregenerated adventurers, stat blocks, boxed text, and a Twilight Clock are built into the **Table** tab.
 
+## Oracle via Cursor
+
+1. Open **Oracle → Model settings**
+2. Create a user API key at [cursor.com/dashboard/api](https://cursor.com/dashboard/api) and paste it
+3. Leave **Search this GitHub repo** on so the agent can read `src/data/`
+4. Ask a question. The first reply starts a read-only Cloud Agent (it can take a minute); later questions reuse that session
+
+Local `npm run dev` proxies `/cursor-api` to Cursor so the browser is not blocked by CORS. The hosted GitHub Pages app talks to `api.cursor.com` directly.
+
 ## Features
 
-- **Oracle** — a live language model answers as Sage Nerin, grounded in the campaign bible. Default is Puter.js in the browser (no app key). Optional Groq / OpenRouter / OpenAI keys stay in the browser.  
+- **Oracle** — Sage Nerin answers through your [Cursor Cloud Agent](https://cursor.com/dashboard/api): questions bill your Cursor tokens and can search this repo (`src/data/`). Puter / Groq / OpenAI remain optional fallbacks. The key stays in this browser.  
 - **Maps** — prompt-to-painting (cloud image model) and an offline inked cartographer; campaign art included  
 - **Party** — HP, AC, abilities, skills, inventory, conditions, death saves, inspiration  
 - **Table** — scene runner with 3-hour pacing, dice, initiative, DM secrets  
@@ -40,7 +49,9 @@ npm install
 npm run dev
 ```
 
-Open the URL Vite prints (usually `http://localhost:5173`).
+Open the URL Vite prints (usually `http://localhost:5173`). Local Vite proxies `/cursor-api` to `https://api.cursor.com` so the Oracle can use your Cursor key without browser CORS issues.
+
+On the GitHub Pages host, the Oracle talks to the Cursor API directly. If the browser blocks that, run Sagekeep locally as above.
 
 ```bash
 npm test

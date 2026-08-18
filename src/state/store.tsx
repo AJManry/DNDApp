@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { allLore } from '../data/corpus'
 import { rollDice } from '../lib/dice'
+import { isCursorProvider } from '../lib/cursorAgent'
 import { loadLlmSettings, saveLlmSettings, type LlmSettings } from '../lib/llm'
 import { makeGeneratedMap } from '../lib/mapStudio'
 import { askSage, type SageAskResult } from '../lib/sage'
@@ -30,7 +31,7 @@ type Action =
   | { type: 'hydrate'; state: AppState }
   | { type: 'tab'; tab: TabId }
   | { type: 'query'; query: string }
-  | { type: 'ask-start'; query: string }
+  | { type: 'ask-start'; query: string; pendingText?: string }
   | { type: 'ask-finish'; payload: SageAskResult }
   | { type: 'ask-error'; message: string }
   | { type: 'scene'; id: string }
@@ -74,7 +75,7 @@ function reducer(state: AppState, action: Action): AppState {
           {
             id: 's-pending',
             role: 'sage',
-            text: 'The sage is listening to the Green…',
+            text: action.pendingText || 'The sage is listening to the Green…',
             pending: true,
           },
         ],
@@ -252,15 +253,29 @@ export function SagekeepProvider({ children }: { children: ReactNode }) {
     const q = query.trim()
     const snap = stateRef.current
     if (!q || snap.oracleBusy) return
-    dispatch({ type: 'ask-start', query: q })
+    const settings = loadLlmSettings()
+    dispatch({
+      type: 'ask-start',
+      query: q,
+      pendingText: isCursorProvider(settings)
+        ? 'Sage Nerin is searching the campaign through Cursor… the first answer can take a minute.'
+        : 'The sage is listening to the Green…',
+    })
     void askSage({
       query: q,
       entries: allLore(snap.customLore),
       secretsRevealed: snap.secretsRevealed,
       history: snap.oracleThread,
-      settings: loadLlmSettings(),
+      settings,
     })
-      .then((payload) => dispatch({ type: 'ask-finish', payload }))
+      .then((payload) => {
+        if (payload.cursorAgentId) {
+          const next = { ...loadLlmSettings(), cursorAgentId: payload.cursorAgentId }
+          saveLlmSettings(next)
+          setLlmSettingsState(next)
+        }
+        dispatch({ type: 'ask-finish', payload })
+      })
       .catch((err: unknown) => {
         const message = err instanceof Error ? err.message : 'Unknown error'
         dispatch({ type: 'ask-error', message })

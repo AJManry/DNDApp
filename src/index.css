@@ -209,6 +209,8 @@ h1 { font-size: 2.1rem; line-height: 1.15; }
   border-radius: 12px;
 }
 .llm-settings label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--muted); }
+.llm-settings label.check { flex-direction: row; align-items: center; gap: 0.5rem; }
+.llm-settings label.check input { width: auto; }
 .llm-settings input, .llm-settings select {
   background: #0f1613;
   border: 1px solid var(--line);
@@ -216,6 +218,8 @@ h1 { font-size: 2.1rem; line-height: 1.15; }
   padding: 0.5rem 0.7rem;
   width: 100%;
 }
+.llm-settings a { color: var(--gold-2); }
+.llm-actions { display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .hit-list button {
   width: 100%;
   text-align: left;

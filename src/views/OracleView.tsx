@@ -1,6 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { allLore } from '../data/corpus'
 import { asset } from '../lib/assets'
+import {
+  CURSOR_DASHBOARD_KEYS,
+  cursorAgentUrl,
+  isCursorProvider,
+  verifyCursorApiKey,
+} from '../lib/cursorAgent'
 import { LLM_PRESETS, type LlmSettings } from '../lib/llm'
 import { searchLore } from '../lib/search'
 import { useSagekeep } from '../state/store'
@@ -30,7 +36,9 @@ const SUGGESTIONS = [
 export function OracleView() {
   const { state, dispatch, askOracle, llmSettings, setLlmSettings } = useSagekeep()
   const [kind, setKind] = useState<(typeof KINDS)[number]['id']>('all')
-  const [showModel, setShowModel] = useState(false)
+  const [showModel, setShowModel] = useState(
+    () => isCursorProvider(llmSettings) && !llmSettings.apiKey.trim(),
+  )
   const corpus = useMemo(() => allLore(state.customLore), [state.customLore])
   const liveHits = useMemo(() => {
     const hits = searchLore(corpus, state.oracleQuery || lastUserQuery(state), 10)
@@ -46,8 +54,9 @@ export function OracleView() {
           <div>
             <h1>Oracle of Eldara</h1>
             <p>
-              A live language model answers as Sage Nerin, grounded in the campaign bible. Ask how to run a scene,
-              invent a place, or describe a map — citations stay in the rail.
+              Sage Nerin answers through <strong>your Cursor Cloud Agent</strong>, searching this campaign repo and
+              billing your Cursor tokens. Paste an API key once, then ask how to run a scene, invent a place, or
+              describe a map.
             </p>
             <button className="ghost" type="button" onClick={() => setShowModel((v) => !v)}>
               {showModel ? 'Hide model settings' : 'Model settings'}
@@ -96,7 +105,7 @@ export function OracleView() {
                 askOracle(state.oracleQuery)
               }
             }}
-            placeholder="Ask the sage… a live model will answer from Eldara’s bible"
+            placeholder="Ask the sage… Cursor will search Eldara’s bible"
           />
           <button type="submit" disabled={state.oracleBusy}>
             {state.oracleBusy ? 'Listening…' : 'Consult'}
@@ -139,22 +148,46 @@ function ModelSettings({
   onSave: (settings: LlmSettings) => void
 }) {
   const [draft, setDraft] = useState(settings)
+  const [testMsg, setTestMsg] = useState('')
+  const [testing, setTesting] = useState(false)
+
+  useEffect(() => {
+    setDraft((current) =>
+      current.cursorAgentId === settings.cursorAgentId
+        ? current
+        : { ...current, cursorAgentId: settings.cursorAgentId },
+    )
+  }, [settings.cursorAgentId])
+  const cursor = isCursorProvider(draft)
+  const presetId = LLM_PRESETS.find((p) => p.baseUrl === draft.baseUrl)?.id ?? 'custom'
+  const sessionId = draft.cursorAgentId?.trim()
+
   return (
     <form
       className="llm-settings"
       onSubmit={(e) => {
         e.preventDefault()
-        onSave(draft)
+        const repoChanged =
+          draft.cursorRepoUrl !== settings.cursorRepoUrl || draft.cursorRef !== settings.cursorRef
+        onSave({
+          ...draft,
+          cursorAgentId: repoChanged ? '' : draft.cursorAgentId,
+        })
+        setTestMsg('Saved in this browser.')
       }}
     >
       <p className="hint">
-        Default is Puter in the browser (no app key; it may ask you to sign in once with a free Puter account). You can
-        switch to Pollinations, or paste a Groq / OpenRouter / OpenAI key. Keys stay in this browser only.
+        Default is Cursor. Create a user API key at{' '}
+        <a href={CURSOR_DASHBOARD_KEYS} target="_blank" rel="noreferrer">
+          cursor.com/dashboard/api
+        </a>
+        . Keys stay in this browser. The first question starts a read-only Cloud Agent on this repo; later questions
+        reuse that session.
       </p>
       <label>
         Preset
         <select
-          value={LLM_PRESETS.find((p) => p.baseUrl === draft.baseUrl)?.id ?? 'custom'}
+          value={presetId}
           onChange={(e) => {
             const preset = LLM_PRESETS.find((p) => p.id === e.target.value)
             if (preset) setDraft({ ...draft, baseUrl: preset.baseUrl, model: preset.model })
@@ -168,25 +201,130 @@ function ModelSettings({
           <option value="custom">Custom OpenAI-compatible</option>
         </select>
       </label>
-      <label>
-        Chat completions URL
-        <input value={draft.baseUrl} onChange={(e) => setDraft({ ...draft, baseUrl: e.target.value })} />
-      </label>
-      <label>
-        Model
-        <input value={draft.model} onChange={(e) => setDraft({ ...draft, model: e.target.value })} />
-      </label>
-      <label>
-        API key (optional)
-        <input
-          type="password"
-          autoComplete="off"
-          value={draft.apiKey}
-          onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })}
-          placeholder="Leave blank for Puter / Pollinations"
-        />
-      </label>
-      <button type="submit">Save model</button>
+      {cursor ? (
+        <>
+          <label>
+            Cursor API key
+            <input
+              type="password"
+              autoComplete="off"
+              value={draft.apiKey}
+              onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })}
+              placeholder="crsr_…"
+            />
+          </label>
+          <label>
+            Model (optional)
+            <input
+              value={draft.model}
+              onChange={(e) => setDraft({ ...draft, model: e.target.value })}
+              placeholder="Leave blank for your Cursor default"
+            />
+          </label>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={draft.cursorSearchRepo !== false}
+              onChange={(e) => setDraft({ ...draft, cursorSearchRepo: e.target.checked })}
+            />
+            Search this GitHub repo with Cursor (recommended)
+          </label>
+          {draft.cursorSearchRepo !== false ? (
+            <>
+              <label>
+                Repository
+                <input
+                  value={draft.cursorRepoUrl ?? ''}
+                  onChange={(e) => setDraft({ ...draft, cursorRepoUrl: e.target.value })}
+                />
+              </label>
+              <label>
+                Branch
+                <input
+                  value={draft.cursorRef ?? ''}
+                  onChange={(e) => setDraft({ ...draft, cursorRef: e.target.value })}
+                />
+              </label>
+            </>
+          ) : null}
+          <label>
+            Cursor API proxy (optional)
+            <input
+              value={draft.cursorProxyUrl ?? ''}
+              onChange={(e) => setDraft({ ...draft, cursorProxyUrl: e.target.value })}
+              placeholder="Leave blank. Local dev already uses /cursor-api"
+            />
+          </label>
+          {sessionId ? (
+            <p className="hint">
+              Active Cursor session:{' '}
+              <a href={cursorAgentUrl(sessionId)} target="_blank" rel="noreferrer">
+                {sessionId}
+              </a>
+            </p>
+          ) : (
+            <p className="hint">No Cursor Oracle session yet. The next question will start one.</p>
+          )}
+        </>
+      ) : (
+        <>
+          <label>
+            Chat completions URL
+            <input value={draft.baseUrl} onChange={(e) => setDraft({ ...draft, baseUrl: e.target.value })} />
+          </label>
+          <label>
+            Model
+            <input value={draft.model} onChange={(e) => setDraft({ ...draft, model: e.target.value })} />
+          </label>
+          <label>
+            API key (optional)
+            <input
+              type="password"
+              autoComplete="off"
+              value={draft.apiKey}
+              onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })}
+              placeholder="Leave blank for Puter / Pollinations"
+            />
+          </label>
+        </>
+      )}
+      <div className="llm-actions">
+        <button type="submit">Save model</button>
+        {cursor ? (
+          <button
+            type="button"
+            className="ghost"
+            disabled={testing || !draft.apiKey.trim()}
+            onClick={() => {
+              setTesting(true)
+              setTestMsg('')
+              void verifyCursorApiKey(draft)
+                .then((msg) => setTestMsg(msg))
+                .catch((err: unknown) => {
+                  setTestMsg(err instanceof Error ? err.message : 'Could not reach Cursor.')
+                })
+                .finally(() => setTesting(false))
+            }}
+          >
+            {testing ? 'Testing…' : 'Test Cursor key'}
+          </button>
+        ) : null}
+        {sessionId ? (
+          <button
+            type="button"
+            className="ghost"
+            onClick={() => {
+              const next = { ...draft, cursorAgentId: '' }
+              setDraft(next)
+              onSave(next)
+              setTestMsg('Cleared the Cursor Oracle session. The next question starts a new agent.')
+            }}
+          >
+            Reset Cursor session
+          </button>
+        ) : null}
+      </div>
+      {testMsg ? <p className="hint">{testMsg}</p> : null}
     </form>
   )
 }
