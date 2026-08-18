@@ -1,16 +1,20 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
+  useRef,
+  useState,
   type Dispatch,
   type ReactNode,
 } from 'react'
 import { allLore } from '../data/corpus'
 import { rollDice } from '../lib/dice'
-import { consultSage } from '../lib/sage'
+import { loadLlmSettings, saveLlmSettings, type LlmSettings } from '../lib/llm'
 import { makeGeneratedMap } from '../lib/mapStudio'
+import { askSage, type SageAskResult } from '../lib/sage'
 import { defaultState, loadState, saveState } from '../lib/storage'
 import type {
   AppState,
@@ -26,7 +30,9 @@ type Action =
   | { type: 'hydrate'; state: AppState }
   | { type: 'tab'; tab: TabId }
   | { type: 'query'; query: string }
-  | { type: 'ask'; query: string }
+  | { type: 'ask-start'; query: string }
+  | { type: 'ask-finish'; payload: SageAskResult }
+  | { type: 'ask-error'; message: string }
   | { type: 'scene'; id: string }
   | { type: 'toggle-scene'; id: string }
   | { type: 'clock'; value: number }
@@ -54,40 +60,66 @@ function reducer(state: AppState, action: Action): AppState {
       return { ...state, tab: action.tab }
     case 'query':
       return { ...state, oracleQuery: action.query }
-    case 'ask': {
+    case 'ask-start': {
       const q = action.query.trim()
-      if (!q) return state
-      const entries = allLore(state.customLore)
-      const result = consultSage(q, entries)
-      const created: LoreEntry[] = result.created ? [...state.customLore, result.created] : state.customLore
+      if (!q || state.oracleBusy) return state
       return {
         ...state,
         oracleQuery: '',
-        customLore: created,
-        tab: result.mapPrompt ? 'maps' : state.tab,
+        tab: 'oracle',
+        oracleBusy: true,
         oracleThread: [
           ...state.oracleThread,
+          { id: `u-${Date.now()}`, role: 'user', text: q, query: q },
           {
-            id: `u-${Date.now()}`,
-            role: 'user',
-            text: q,
-            query: q,
-          },
-          {
-            id: `s-${Date.now()}`,
+            id: 's-pending',
             role: 'sage',
-            text: result.text,
-            query: q,
-            hitIds: result.hitIds,
-            createdLoreId: result.createdLoreId,
-            mapPrompt: result.mapPrompt,
+            text: 'The sage is listening to the Green…',
+            pending: true,
           },
         ],
-        maps: result.mapPrompt
-          ? upsertMap(state.maps, makeGeneratedMap(result.mapPrompt))
+      }
+    }
+    case 'ask-finish': {
+      const created: LoreEntry[] = action.payload.created
+        ? [...state.customLore, action.payload.created]
+        : state.customLore
+      return {
+        ...state,
+        oracleBusy: false,
+        customLore: created,
+        tab: action.payload.mapPrompt ? 'maps' : state.tab,
+        oracleThread: state.oracleThread.map((m) =>
+          m.pending
+            ? {
+                id: `s-${Date.now()}`,
+                role: 'sage',
+                text: action.payload.text,
+                hitIds: action.payload.hitIds,
+                createdLoreId: action.payload.createdLoreId,
+                mapPrompt: action.payload.mapPrompt,
+              }
+            : m,
+        ),
+        maps: action.payload.mapPrompt
+          ? upsertMap(state.maps, makeGeneratedMap(action.payload.mapPrompt))
           : state.maps,
       }
     }
+    case 'ask-error':
+      return {
+        ...state,
+        oracleBusy: false,
+        oracleThread: state.oracleThread.map((m) =>
+          m.pending
+            ? {
+                id: `s-${Date.now()}`,
+                role: 'sage',
+                text: `The oracle could not reach a model. ${action.message}`,
+              }
+            : m,
+        ),
+      }
     case 'scene':
       return { ...state, sceneId: action.id }
     case 'toggle-scene': {
@@ -188,10 +220,21 @@ function upsertMap(maps: GeneratedMap[], map: GeneratedMap): GeneratedMap[] {
   return [map, ...maps.filter((m) => m.id !== map.id)].slice(0, 24)
 }
 
-const StoreContext = createContext<{ state: AppState; dispatch: Dispatch<Action> } | null>(null)
+interface StoreValue {
+  state: AppState
+  dispatch: Dispatch<Action>
+  askOracle: (query: string) => void
+  llmSettings: LlmSettings
+  setLlmSettings: (settings: LlmSettings) => void
+}
+
+const StoreContext = createContext<StoreValue | null>(null)
 
 export function SagekeepProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState)
+  const stateRef = useRef(state)
+  stateRef.current = state
+  const [llmSettings, setLlmSettingsState] = useState(loadLlmSettings)
 
   useEffect(() => {
     saveState(state)
@@ -205,7 +248,34 @@ export function SagekeepProvider({ children }: { children: ReactNode }) {
     return () => window.clearInterval(id)
   }, [state.sessionStartedAt])
 
-  const value = useMemo(() => ({ state, dispatch }), [state])
+  const askOracle = useCallback((query: string) => {
+    const q = query.trim()
+    const snap = stateRef.current
+    if (!q || snap.oracleBusy) return
+    dispatch({ type: 'ask-start', query: q })
+    void askSage({
+      query: q,
+      entries: allLore(snap.customLore),
+      secretsRevealed: snap.secretsRevealed,
+      history: snap.oracleThread,
+      settings: loadLlmSettings(),
+    })
+      .then((payload) => dispatch({ type: 'ask-finish', payload }))
+      .catch((err: unknown) => {
+        const message = err instanceof Error ? err.message : 'Unknown error'
+        dispatch({ type: 'ask-error', message })
+      })
+  }, [])
+
+  const setLlmSettings = useCallback((settings: LlmSettings) => {
+    saveLlmSettings(settings)
+    setLlmSettingsState(settings)
+  }, [])
+
+  const value = useMemo(
+    () => ({ state, dispatch, askOracle, llmSettings, setLlmSettings }),
+    [state, askOracle, llmSettings, setLlmSettings],
+  )
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
 }
 

@@ -17,7 +17,7 @@ const TABS: { id: TabId; label: string; hint: string }[] = [
 ]
 
 function Shell() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch, askOracle } = useSagekeep()
   const searchRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
 
@@ -78,11 +78,11 @@ function Shell() {
               const q = search.trim()
               if (!q) return
               dispatch({ type: 'tab', tab: 'oracle' })
-              dispatch({ type: 'ask', query: q })
+              askOracle(q)
               setSearch('')
             }}
           >
-            <span className="omni-kicker">Ask Cursor / the Sage</span>
+            <span className="omni-kicker">Ask the Sage</span>
             <input
               ref={searchRef}
               value={search}

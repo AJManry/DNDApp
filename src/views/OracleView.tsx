@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { allLore } from '../data/corpus'
 import { asset } from '../lib/assets'
+import { LLM_PRESETS, type LlmSettings } from '../lib/llm'
 import { searchLore } from '../lib/search'
 import { useSagekeep } from '../state/store'
 import type { LoreKind } from '../types'
@@ -18,17 +19,18 @@ const KINDS: { id: LoreKind | 'all'; label: string }[] = [
 ]
 
 const SUGGESTIONS = [
-  'Who is Lord Vaelith?',
-  'Where is the Echo Flute?',
-  'How does the Twilight Clock work?',
-  'Temple of the Green Blade puzzles',
-  'Create a lakeside shrine to a sky whale',
+  'Who is Lord Vaelith, and how should I play him at the table?',
+  'Where is the Echo Flute and what does a true note do?',
+  'How does the Twilight Clock work if we linger in the forest?',
+  'Walk me through the Temple of the Green Blade puzzles',
+  'Create a lakeside shrine to a sky whale that still hears the Waking Song',
   'Map of a mossfolk village in giant roots',
 ]
 
 export function OracleView() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch, askOracle, llmSettings, setLlmSettings } = useSagekeep()
   const [kind, setKind] = useState<(typeof KINDS)[number]['id']>('all')
+  const [showModel, setShowModel] = useState(false)
   const corpus = useMemo(() => allLore(state.customLore), [state.customLore])
   const liveHits = useMemo(() => {
     const hits = searchLore(corpus, state.oracleQuery || lastUserQuery(state), 10)
@@ -44,14 +46,18 @@ export function OracleView() {
           <div>
             <h1>Oracle of Eldara</h1>
             <p>
-              This is the in-app Cursor for worldbuilding. Search the bible, ask who/what/where, or invent new
-              places — they become searchable. Map-shaped prompts jump to the Maps tab and paint the world.
+              A live language model answers as Sage Nerin, grounded in the campaign bible. Ask how to run a scene,
+              invent a place, or describe a map — citations stay in the rail.
             </p>
+            <button className="ghost" type="button" onClick={() => setShowModel((v) => !v)}>
+              {showModel ? 'Hide model settings' : 'Model settings'}
+            </button>
           </div>
         </div>
+        {showModel ? <ModelSettings settings={llmSettings} onSave={setLlmSettings} /> : null}
         <div className="chips">
           {SUGGESTIONS.map((s) => (
-            <button key={s} onClick={() => dispatch({ type: 'ask', query: s })}>
+            <button key={s} disabled={state.oracleBusy} onClick={() => askOracle(s)}>
               {s}
             </button>
           ))}
@@ -61,7 +67,7 @@ export function OracleView() {
             <p className="empty">Ask anything about Windfall, the verses, Vaelith, pacing, or the temple keys.</p>
           ) : (
             state.oracleThread.map((m) => (
-              <div key={m.id} className={`bubble ${m.role}`}>
+              <div key={m.id} className={`bubble ${m.role}${m.pending ? ' pending' : ''}`}>
                 <RichText text={m.text} />
                 {m.mapPrompt ? (
                   <button className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'maps' })}>
@@ -76,22 +82,25 @@ export function OracleView() {
           className="composer"
           onSubmit={(e) => {
             e.preventDefault()
-            dispatch({ type: 'ask', query: state.oracleQuery })
+            askOracle(state.oracleQuery)
           }}
         >
           <textarea
             rows={3}
             value={state.oracleQuery}
+            disabled={state.oracleBusy}
             onChange={(e) => dispatch({ type: 'query', query: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault()
-                dispatch({ type: 'ask', query: state.oracleQuery })
+                askOracle(state.oracleQuery)
               }
             }}
-            placeholder="Ask about the world, or say “create a…” to weave new lore…"
+            placeholder="Ask the sage… a live model will answer from Eldara’s bible"
           />
-          <button type="submit">Consult</button>
+          <button type="submit" disabled={state.oracleBusy}>
+            {state.oracleBusy ? 'Listening…' : 'Consult'}
+          </button>
         </form>
       </div>
       <aside className="oracle-hits">
@@ -109,7 +118,7 @@ export function OracleView() {
             .slice(0, 12)
             .map((h) => (
               <li key={h.entry.id}>
-                <button onClick={() => dispatch({ type: 'ask', query: h.entry.title })}>
+                <button disabled={state.oracleBusy} onClick={() => askOracle(h.entry.title)}>
                   <span className="kind">{h.entry.kind}</span>
                   <strong>{h.entry.title}</strong>
                   <p>{h.snippet || h.entry.summary}</p>
@@ -119,6 +128,66 @@ export function OracleView() {
         </ul>
       </aside>
     </div>
+  )
+}
+
+function ModelSettings({
+  settings,
+  onSave,
+}: {
+  settings: LlmSettings
+  onSave: (settings: LlmSettings) => void
+}) {
+  const [draft, setDraft] = useState(settings)
+  return (
+    <form
+      className="llm-settings"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSave(draft)
+      }}
+    >
+      <p className="hint">
+        Default is Puter in the browser (no app key; it may ask you to sign in once with a free Puter account). You can
+        switch to Pollinations, or paste a Groq / OpenRouter / OpenAI key. Keys stay in this browser only.
+      </p>
+      <label>
+        Preset
+        <select
+          value={LLM_PRESETS.find((p) => p.baseUrl === draft.baseUrl)?.id ?? 'custom'}
+          onChange={(e) => {
+            const preset = LLM_PRESETS.find((p) => p.id === e.target.value)
+            if (preset) setDraft({ ...draft, baseUrl: preset.baseUrl, model: preset.model })
+          }}
+        >
+          {LLM_PRESETS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+          <option value="custom">Custom OpenAI-compatible</option>
+        </select>
+      </label>
+      <label>
+        Chat completions URL
+        <input value={draft.baseUrl} onChange={(e) => setDraft({ ...draft, baseUrl: e.target.value })} />
+      </label>
+      <label>
+        Model
+        <input value={draft.model} onChange={(e) => setDraft({ ...draft, model: e.target.value })} />
+      </label>
+      <label>
+        API key (optional)
+        <input
+          type="password"
+          autoComplete="off"
+          value={draft.apiKey}
+          onChange={(e) => setDraft({ ...draft, apiKey: e.target.value })}
+          placeholder="Leave blank for Puter / Pollinations"
+        />
+      </label>
+      <button type="submit">Save model</button>
+    </form>
   )
 }
 

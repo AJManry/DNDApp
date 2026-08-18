@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { allLore } from '../data/corpus'
-import { classifyIntent, consultSage, createLoreFromPrompt } from './sage'
+import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages } from './sage'
 import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
@@ -35,10 +35,31 @@ describe('sage', () => {
     expect(classifyIntent('who is luma')).toBe('search')
   })
 
-  it('answers from the bible', () => {
-    const result = consultSage('Where is Windfall Village?', allLore())
-    expect(result.text).toMatch(/Windfall/)
-    expect(result.hitIds?.length).toBeGreaterThan(0)
+  it('packs bible context for the model', () => {
+    const packed = buildSageMessages({
+      query: 'Where is Windfall Village?',
+      entries: allLore(),
+      secretsRevealed: true,
+      history: [],
+    })
+    expect(packed.hitIds.length).toBeGreaterThan(0)
+    expect(packed.messages.some((m) => /Windfall/.test(m.content))).toBe(true)
+  })
+
+  it('parses JSON model replies', () => {
+    const parsed = parseSageReply(
+      '{"answer":"Vaelith stole the song.","lore":null,"mapPrompt":null}',
+    )
+    expect(parsed.answer).toMatch(/Vaelith/)
+    expect(parsed.lore).toBeNull()
+  })
+
+  it('extracts lore drafts from fenced JSON', () => {
+    const parsed = parseSageReply(
+      '```json\n{"answer":"A new dock.","lore":{"title":"Tideglass","summary":"Coastal village","body":"They worship a sky whale."},"mapPrompt":"coastal village dusk"}\n```',
+    )
+    expect(parsed.lore?.title).toBe('Tideglass')
+    expect(parsed.mapPrompt).toMatch(/coastal/)
   })
 
   it('weaves new lore from a prompt', () => {

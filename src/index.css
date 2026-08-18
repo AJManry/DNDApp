@@ -41,7 +41,7 @@ button {
   border-radius: 8px;
   padding: 0.45rem 0.8rem;
 }
-button:hover { border-color: var(--gold); }
+button:disabled { opacity: 0.55; cursor: wait; }
 .ghost { background: transparent; }
 .danger { color: #ffd4d4; border-color: rgba(196, 92, 92, 0.5); }
 
@@ -197,7 +197,25 @@ h1 { font-size: 2.1rem; line-height: 1.15; }
 .bubble { padding: 0.85rem 1rem; }
 .bubble.user { background: #24352c; margin-left: 12%; }
 .bubble.sage { margin-right: 8%; }
+.bubble.pending { color: var(--muted); font-style: italic; }
 .composer { display: grid; grid-template-columns: 1fr auto; gap: 0.6rem; align-items: end; }
+.llm-settings {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0.6rem 0 1rem;
+  padding: 0.8rem 0.9rem;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.llm-settings label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.8rem; color: var(--muted); }
+.llm-settings input, .llm-settings select {
+  background: #0f1613;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  width: 100%;
+}
 .hit-list button {
   width: 100%;
   text-align: left;

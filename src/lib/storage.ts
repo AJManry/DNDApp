@@ -9,6 +9,7 @@ export function defaultState(): AppState {
     tab: 'play',
     oracleQuery: '',
     oracleThread: [],
+    oracleBusy: false,
     party: structuredClone(pregens),
     selectedCharacterId: pregens[0]?.id ?? null,
     initiative: [],
@@ -30,12 +31,20 @@ export function loadState(): AppState {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState()
     const parsed = JSON.parse(raw) as Partial<AppState>
-    return { ...defaultState(), ...parsed }
+    const thread = (parsed.oracleThread ?? []).filter((m) => !m.pending)
+    return { ...defaultState(), ...parsed, oracleThread: thread, oracleBusy: false }
   } catch {
     return defaultState()
   }
 }
 
 export function saveState(state: AppState): void {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      ...state,
+      oracleBusy: false,
+      oracleThread: state.oracleThread.filter((m) => !m.pending),
+    }),
+  )
 }

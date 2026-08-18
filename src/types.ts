@@ -145,6 +145,7 @@ export interface OracleMessage {
   hitIds?: string[]
   createdLoreId?: string
   mapPrompt?: string
+  pending?: boolean
 }
 
 export interface DiceLog {
@@ -159,6 +160,7 @@ export interface AppState {
   tab: TabId
   oracleQuery: string
   oracleThread: OracleMessage[]
+  oracleBusy: boolean
   party: Character[]
   selectedCharacterId: string | null
   initiative: Combatant[]

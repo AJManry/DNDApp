@@ -1,4 +1,5 @@
 import type { LoreEntry, OracleMessage } from '../types'
+import { completeChat, type ChatMessage, type LlmSettings } from './llm'
 import { searchLore, tokenize } from './search'
 
 const CREATE_RE =
@@ -46,74 +47,190 @@ function titleFromQuery(query: string): string {
   return words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') || 'Unnamed Thread'
 }
 
-export function createLoreFromPrompt(query: string): LoreEntry {
+export function createLoreFromPrompt(query: string, body?: string): LoreEntry {
   const { kind, label } = guessKind(query)
   const title = titleFromQuery(query)
   const id = `custom-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`
-  const body = weaveBody(title, kind, label, query)
   return {
     id,
     title,
     kind: 'custom',
     tags: ['custom', 'worldbuilding', kind, label, ...tokenize(query).slice(0, 6)],
     summary: `Homebrew ${label} woven into Eldara from your prompt.`,
-    body,
+    body: body?.trim() || weaveBody(title, kind, label, query),
   }
 }
 
 function weaveBody(title: string, kind: LoreEntry['kind'], label: string, query: string): string {
   const q = query.replace(/\s+/g, ' ').trim()
-  const hooks = [
-    `How it touches the Waking Song: it either keeps a measure, steals one, or has forgotten it owns one.`,
-    `A rumor in Windfall: someone at The Second Note will swear they saw ${title} at dusk.`,
-    `Adventure use: a 10-minute scene, a skill check at DC 13, or a map prompt in the Maps tab.`,
-  ]
-  return `${title} enters the chronicle as a ${label} (${kind}). Seed: “${q}”\n\n${hooks.join('\n')}\n\nDM note: Keep Nintendo trademarks out of the spoken fiction. If this idea leans on a famous dungeon or fairy, rename it and keep the rhythm.`
+  return `${title} enters the chronicle as a ${label} (${kind}). Seed: “${q}”`
 }
 
-export function answerFromHits(query: string, hits: ReturnType<typeof searchLore>): string {
-  if (hits.length === 0) {
-    return `Nothing in the Eldara bible matches “${query}” yet. Ask a narrower question (try Windfall, Luma, Vaelith, Echo Flute, or Temple), or invent a new corner of the world with words like “create a coastal shrine…”`
-  }
-  const top = hits[0]
-  const extras = hits.slice(1, 4).map((h) => h.entry.title)
-  const secret = top.entry.secrets
-  let text = `**${top.entry.title}** (${top.entry.kind})\n\n${top.entry.summary}\n\n${top.entry.body}`
-  if (secret) {
-    text += `\n\n*DM-only thread:* ${secret}`
-  }
-  if (extras.length) {
-    text += `\n\nAlso see: ${extras.join(' · ')}`
-  }
-  return text
+export interface SageLoreDraft {
+  title: string
+  summary: string
+  body: string
+  kind?: LoreEntry['kind']
 }
 
-export function consultSage(
-  query: string,
-  entries: LoreEntry[],
-): Pick<OracleMessage, 'text' | 'hitIds' | 'createdLoreId' | 'mapPrompt'> & {
-  created?: LoreEntry
-} {
-  const intent = classifyIntent(query)
-  if (intent === 'map') {
-    return {
-      text: `I’ll take that to the cartographer. Open the **Maps** tab — the prompt is ready to paint a graphic of this place.\n\nPrompt: ${query}`,
-      hitIds: searchLore(entries, query, 3).map((h) => h.entry.id),
-      mapPrompt: query,
+export interface SageReply {
+  answer: string
+  lore: SageLoreDraft | null
+  mapPrompt: string | null
+}
+
+export function parseSageReply(raw: string): SageReply {
+  const trimmed = raw.trim()
+  const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const candidate = fenced?.[1]?.trim() ?? trimmed
+  const start = candidate.indexOf('{')
+  const end = candidate.lastIndexOf('}')
+  if (start >= 0 && end > start) {
+    try {
+      const obj = JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>
+      const answer = pickString(obj.answer) || pickString(obj.text) || trimmed
+      return {
+        answer,
+        lore: parseLoreDraft(obj.lore),
+        mapPrompt: pickString(obj.mapPrompt) || pickString(obj.map_prompt),
+      }
+    } catch {
+      /* fall through */
     }
   }
-  if (intent === 'create') {
-    const created = createLoreFromPrompt(query)
-    return {
-      text: `Woven into the world bible as **${created.title}**. It is searchable from now on.\n\n${created.body}`,
-      hitIds: [],
-      createdLoreId: created.id,
-      created,
-    }
-  }
-  const hits = searchLore(entries, query, 6)
+  return { answer: trimmed, lore: null, mapPrompt: null }
+}
+
+function pickString(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value.trim() : null
+}
+
+function parseLoreDraft(value: unknown): SageLoreDraft | null {
+  if (!value || typeof value !== 'object') return null
+  const obj = value as Record<string, unknown>
+  const title = pickString(obj.title)
+  const body = pickString(obj.body)
+  if (!title || !body) return null
+  const kind = pickString(obj.kind) as LoreEntry['kind'] | null
   return {
-    text: answerFromHits(query, hits),
-    hitIds: hits.map((h) => h.entry.id),
+    title,
+    summary: pickString(obj.summary) || body.slice(0, 160),
+    body,
+    kind: kind || 'custom',
+  }
+}
+
+export function formatLoreContext(
+  entries: LoreEntry[],
+  query: string,
+  secretsRevealed: boolean,
+  limit = 5,
+): { hits: ReturnType<typeof searchLore>; block: string } {
+  const hits = searchLore(entries, query, limit)
+  if (hits.length === 0) {
+    return {
+      hits,
+      block: 'No indexed entries matched this question. Answer from Eldara’s tone and invent carefully, marking guesses.',
+    }
+  }
+  const block = hits
+    .map((h) => {
+      const e = h.entry
+      const secret = secretsRevealed && e.secrets ? `\nDM secret: ${e.secrets}` : ''
+      const body = e.body.length > 900 ? `${e.body.slice(0, 900)}…` : e.body
+      return `### ${e.title} (${e.kind})\n${e.summary}\n${body}${secret}`
+    })
+    .join('\n\n')
+  return { hits, block }
+}
+
+export function sageSystemPrompt(secretsRevealed: boolean, intent: SageIntent): string {
+  return [
+    'You are Sage Nerin, the in-app Dungeon Master oracle for Sagekeep, a Zelda-inspired original 5e one-shot called The Song That Wakes the Green, set in Eldara.',
+    'Speak as a warm, precise table sage. Use the supplied campaign bible as canon. If the bible does not cover something, say so and offer a useful invention marked as new.',
+    'Do not use Nintendo trademarks in spoken fiction (no Hyrule, Link, Zelda, Ganon, Triforce, ocarina). Echo Flute, Luma, Vaelith, mossfolk, and the Three Verses are the local names.',
+    secretsRevealed
+      ? 'The user is the DM. You may share secrets, stat tactics, and spoilers.'
+      : 'The user may be a player. Hide DM secrets and spoilers unless they clearly ask as the referee.',
+    intent === 'create'
+      ? 'They want new worldbuilding. Invent something that fits Eldara and return it in lore.'
+      : '',
+    intent === 'map'
+      ? 'They want a place visualized. Put a short image-generation prompt in mapPrompt (English, no trademarks).'
+      : 'Set mapPrompt to null unless they clearly asked for a map or painting.',
+    'Reply with ONLY a JSON object, no markdown fence:',
+    '{"answer":"markdown for the user","lore":null,"mapPrompt":null}',
+    'If you invented a lasting place/person/item, set lore to {"title","summary","body","kind"} where kind is location|npc|item|creature|faction|lore.',
+    'answer should be 1–4 short paragraphs, specific and playable. Use **bold** for names.',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+export function buildSageMessages(opts: {
+  query: string
+  entries: LoreEntry[]
+  secretsRevealed: boolean
+  history: OracleMessage[]
+}): { intent: SageIntent; hitIds: string[]; messages: ChatMessage[] } {
+  const intent = classifyIntent(opts.query)
+  const { hits, block } = formatLoreContext(opts.entries, opts.query, opts.secretsRevealed)
+  const history = opts.history
+    .filter((m) => !m.pending && m.text.trim())
+    .slice(-6)
+    .map((m) => ({
+      role: (m.role === 'user' ? 'user' : 'assistant') as 'user' | 'assistant',
+      content: m.text,
+    }))
+  const messages: ChatMessage[] = [
+    { role: 'system', content: sageSystemPrompt(opts.secretsRevealed, intent) },
+    {
+      role: 'system',
+      content: `Campaign bible excerpts:\n${block}`,
+    },
+    ...history,
+    { role: 'user', content: opts.query },
+  ]
+  return { intent, hitIds: hits.map((h) => h.entry.id), messages }
+}
+
+export interface SageAskResult {
+  text: string
+  hitIds: string[]
+  created?: LoreEntry
+  createdLoreId?: string
+  mapPrompt?: string
+}
+
+export async function askSage(opts: {
+  query: string
+  entries: LoreEntry[]
+  secretsRevealed: boolean
+  history: OracleMessage[]
+  settings: LlmSettings
+}): Promise<SageAskResult> {
+  const packed = buildSageMessages(opts)
+  const raw = await completeChat(packed.messages, opts.settings)
+  const parsed = parseSageReply(raw)
+  let created: LoreEntry | undefined
+  if (parsed.lore) {
+    created = {
+      id: `custom-${Date.now().toString(36)}`,
+      title: parsed.lore.title,
+      kind: 'custom',
+      tags: ['custom', 'worldbuilding', parsed.lore.kind || 'lore', ...tokenize(opts.query).slice(0, 6)],
+      summary: parsed.lore.summary,
+      body: parsed.lore.body,
+    }
+  } else if (packed.intent === 'create') {
+    created = createLoreFromPrompt(opts.query, parsed.answer)
+  }
+  const mapPrompt = packed.intent === 'map' ? parsed.mapPrompt || opts.query : parsed.mapPrompt || undefined
+  return {
+    text: parsed.answer,
+    hitIds: packed.hitIds,
+    created,
+    createdLoreId: created?.id,
+    mapPrompt: mapPrompt || undefined,
   }
 }

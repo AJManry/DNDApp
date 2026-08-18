@@ -25,7 +25,7 @@ Pregenerated adventurers, stat blocks, boxed text, and a Twilight Clock are buil
 
 ## Features
 
-- **Oracle** — full-text search across the world bible, plus “create a…” worldbuilding that becomes searchable  
+- **Oracle** — a live language model answers as Sage Nerin, grounded in the campaign bible. Default is Puter.js in the browser (no app key). Optional Groq / OpenRouter / OpenAI keys stay in the browser.  
 - **Maps** — prompt-to-painting (cloud image model) and an offline inked cartographer; campaign art included  
 - **Party** — HP, AC, abilities, skills, inventory, conditions, death saves, inspiration  
 - **Table** — scene runner with 3-hour pacing, dice, initiative, DM secrets  
