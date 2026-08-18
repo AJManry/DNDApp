@@ -75,7 +75,7 @@ function reducer(state: AppState, action: Action): AppState {
           {
             id: 's-pending',
             role: 'sage',
-            text: action.pendingText || 'The sage is listening to the Green…',
+            text: action.pendingText || 'Impa is listening to the Goddesses…',
             pending: true,
           },
         ],
@@ -231,7 +231,7 @@ interface StoreValue {
 
 const StoreContext = createContext<StoreValue | null>(null)
 
-export function SagekeepProvider({ children }: { children: ReactNode }) {
+export function HyruleProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState)
   const stateRef = useRef(state)
   stateRef.current = state
@@ -258,8 +258,8 @@ export function SagekeepProvider({ children }: { children: ReactNode }) {
       type: 'ask-start',
       query: q,
       pendingText: isCursorProvider(settings)
-        ? 'Sage Nerin is searching the campaign through Cursor… the first answer can take a minute.'
-        : 'The sage is listening to the Green…',
+        ? 'Impa is searching the Sheikah records through Cursor… the first answer can take a minute.'
+        : 'Impa is listening to the Goddesses…',
     })
     void askSage({
       query: q,
@@ -296,8 +296,8 @@ export function SagekeepProvider({ children }: { children: ReactNode }) {
 
 // Hook colocated with the provider so table views share one store.
 // oxlint-disable-next-line react/only-export-components
-export function useSagekeep() {
+export function useHyrule() {
   const ctx = useContext(StoreContext)
-  if (!ctx) throw new Error('Sagekeep store missing')
+  if (!ctx) throw new Error('Hyrule store missing')
   return ctx
 }

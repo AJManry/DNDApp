@@ -4,20 +4,20 @@ import { MapsView } from './views/MapsView'
 import { OracleView } from './views/OracleView'
 import { PartyView } from './views/PartyView'
 import { PlayView } from './views/PlayView'
-import { SagekeepProvider, useSagekeep } from './state/store'
+import { HyruleProvider, useHyrule } from './state/store'
 import { asset } from './lib/assets'
 import type { TabId } from './types'
 
 const TABS: { id: TabId; label: string; hint: string }[] = [
   { id: 'play', label: 'Table', hint: 'Run the one-shot' },
   { id: 'oracle', label: 'Oracle', hint: 'Ask the world' },
-  { id: 'maps', label: 'Maps', hint: 'Paint the Green' },
+  { id: 'maps', label: 'Maps', hint: 'Paint Hyrule' },
   { id: 'party', label: 'Party', hint: 'HP, skills, gear' },
   { id: 'journal', label: 'Chronicle', hint: 'Notes & recap' },
 ]
 
 function Shell() {
-  const { state, dispatch, askOracle } = useSagekeep()
+  const { state, dispatch, askOracle } = useHyrule()
   const searchRef = useRef<HTMLInputElement>(null)
   const [search, setSearch] = useState('')
 
@@ -38,10 +38,10 @@ function Shell() {
     <div className="app">
       <aside className="rail">
         <div className="brand">
-          <img src={asset('art/sagekeep-emblem.jpg')} alt="" className="emblem" />
+          <img src={asset('art/hyrule-emblem.jpg')} alt="" className="emblem" />
           <div>
-            <div className="brand-name">Sagekeep</div>
-            <div className="brand-tag">Dungeon Master’s table</div>
+            <div className="brand-name">Hyrule</div>
+            <div className="brand-tag">Hero’s table</div>
           </div>
         </div>
         <nav className="tabs">
@@ -82,12 +82,12 @@ function Shell() {
               setSearch('')
             }}
           >
-            <span className="omni-kicker">Ask the Sage</span>
+            <span className="omni-kicker">Ask Impa</span>
             <input
               ref={searchRef}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search Eldara, invent a village, or describe a map…  (press /)"
+              placeholder="Search Hyrule, invent a village, or describe a map…  (press /)"
               aria-label="World search and worldbuilding"
             />
             <button type="submit">Ask</button>
@@ -123,8 +123,8 @@ function formatElapsed(ms: number): string {
 
 export default function App() {
   return (
-    <SagekeepProvider>
+    <HyruleProvider>
       <Shell />
-    </SagekeepProvider>
+    </HyruleProvider>
   )
 }

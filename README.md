@@ -1,6 +1,8 @@
-# Sagekeep
+# Hyrule
 
-A Dungeon Master’s table for running — and building — a world. Search lore like you would ask Cursor, paint maps from a prompt, track inventory and skills, and play a complete Zelda-inspired 3-hour one-shot.
+A Dungeon Master’s table set in **The Legend of Zelda**. Search lore like you would ask Cursor, paint maps from a prompt, track inventory and skills, and play a complete 3-hour one-shot in the kingdom of Hyrule.
+
+This is a fan-made tabletop campaign for your table — not an official Nintendo product.
 
 ## Play in a browser
 
@@ -11,17 +13,17 @@ The built site is published on the `gh-pages` branch. After you enable GitHub Pa
 3. Set the branch to **gh-pages** / **/ (root)** and click **Save**
 4. Wait a minute, then play at **https://ajmanry.github.io/DNDApp/**
 
-## The Song That Wakes the Green
+## The Song of Time
 
-Original homage (not Nintendo IP): 3rd-level D&D 5e, 3–5 players, about three hours.
+3rd-level D&D 5e, 3–5 players, about three hours, using Zelda names and places.
 
-1. **Windfall** — a harvest village that forgot its song  
-2. **Forest of Echoes** — three virtue trails, mossfolk, a chime shrine  
-3. **Temple of the Green Blade** — keys, puzzles, a bone captain, a sleeping construct  
-4. **Sacred Plateau** — twilight duel with Lord Vaelith  
-5. **Dawn** — epilogue
+1. **Kakariko Village** — a harvest village that forgot its song; Impa and Navi  
+2. **Lost Woods** — three Triforce trails, Koroks, Saria’s Meadow  
+3. **Forest Temple** — keys, puzzles, the Hero’s Shade, Armogohma  
+4. **Sacred Realm** — twilight duel with Ganondorf  
+5. **Dawn over Hyrule** — epilogue
 
-Pregenerated adventurers, stat blocks, boxed text, and a Twilight Clock are built into the **Table** tab.
+Pregenerated adventurers (Link, Sheik, Saria, Darunia), stat blocks, boxed text, and a Twilight Clock are built into the **Table** tab.
 
 ## Oracle via Cursor
 
@@ -34,8 +36,8 @@ Local `npm run dev` proxies `/cursor-api` to Cursor so the browser is not blocke
 
 ## Features
 
-- **Oracle** — Sage Nerin answers through your [Cursor Cloud Agent](https://cursor.com/dashboard/api): questions bill your Cursor tokens and can search this repo (`src/data/`). Puter / Groq / OpenAI remain optional fallbacks. The key stays in this browser.  
-- **Maps** — prompt-to-painting (cloud image model) and an offline inked cartographer; campaign art included  
+- **Oracle** — Impa answers through your [Cursor Cloud Agent](https://cursor.com/dashboard/api): questions bill your Cursor tokens and can search this repo (`src/data/`). Puter / Groq / OpenAI remain optional fallbacks. The key stays in this browser.  
+- **Maps** — prompt-to-painting (cloud image model) and an offline inked cartographer; campaign art of Hyrule included  
 - **Party** — HP, AC, abilities, skills, inventory, conditions, death saves, inspiration  
 - **Table** — scene runner with 3-hour pacing, dice, initiative, DM secrets  
 - **Chronicle** — notes, recap from completed scenes, custom lore
@@ -51,7 +53,7 @@ npm run dev
 
 Open the URL Vite prints (usually `http://localhost:5173`). Local Vite proxies `/cursor-api` to `https://api.cursor.com` so the Oracle can use your Cursor key without browser CORS issues.
 
-On the GitHub Pages host, the Oracle talks to the Cursor API directly. If the browser blocks that, run Sagekeep locally as above.
+On the GitHub Pages host, the Oracle talks to the Cursor API directly. If the browser blocks that, run Hyrule locally as above.
 
 ```bash
 npm test

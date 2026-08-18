@@ -24,8 +24,8 @@ body {
   color: var(--ink);
   font-family: var(--ui);
   background:
-    radial-gradient(1200px 600px at 10% -10%, rgba(107, 76, 154, 0.18), transparent 50%),
-    radial-gradient(900px 500px at 100% 0%, rgba(125, 206, 138, 0.08), transparent 40%),
+    radial-gradient(1200px 600px at 10% -10%, rgba(107, 76, 154, 0.22), transparent 50%),
+    radial-gradient(900px 500px at 100% 0%, rgba(201, 162, 39, 0.12), transparent 40%),
     var(--bg);
 }
 
@@ -245,6 +245,14 @@ figcaption { padding: 0.5rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
 .pc-card.active { border-color: var(--gold); }
 .pc-card.add { min-height: 120px; color: var(--muted); }
 .pc-card header { display: flex; justify-content: space-between; }
+.pc-portrait {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin: 0.45rem 0 0.35rem;
+  border: 1px solid var(--line);
+}
 .hp { position: relative; height: 18px; background: #2a1818; border-radius: 6px; overflow: hidden; margin: 0.45rem 0; }
 .hp-fill { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #7a1f1f, #d4b46a); }
 .hp span { position: relative; display: block; text-align: center; font-size: 0.75rem; line-height: 18px; }

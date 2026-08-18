@@ -23,7 +23,7 @@ const KIND_HINTS: { re: RegExp; kind: LoreEntry['kind']; label: string }[] = [
   { re: /\b(forest|wood|swamp|desert|mountain|island|coast)\b/i, kind: 'location', label: 'region' },
   { re: /\b(npc|villager|sage|knight|merchant|innkeep|captain)\b/i, kind: 'npc', label: 'person' },
   { re: /\b(monster|beast|dragon|spirit|undead|construct)\b/i, kind: 'creature', label: 'creature' },
-  { re: /\b(sword|item|relic|flute|potion|armor|artifact)\b/i, kind: 'item', label: 'item' },
+  { re: /\b(sword|item|relic|flute|ocarina|potion|armor|artifact|triforce)\b/i, kind: 'item', label: 'item' },
   { re: /\b(guild|cult|order|faction|tribe)\b/i, kind: 'faction', label: 'faction' },
 ]
 
@@ -41,7 +41,7 @@ function titleFromQuery(query: string): string {
   if (quoted?.[1]) return quoted[1]
   const cleaned = query
     .replace(CREATE_RE, '')
-    .replace(/\b(a|an|the|please|for me|in eldara|in the world)\b/gi, ' ')
+    .replace(/\b(a|an|the|please|for me|in eldara|in hyrule|in the world)\b/gi, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   const words = cleaned.split(' ').slice(0, 6)
@@ -57,7 +57,7 @@ export function createLoreFromPrompt(query: string, body?: string): LoreEntry {
     title,
     kind: 'custom',
     tags: ['custom', 'worldbuilding', kind, label, ...tokenize(query).slice(0, 6)],
-    summary: `Homebrew ${label} woven into Eldara from your prompt.`,
+    summary: `Homebrew ${label} woven into Hyrule from your prompt.`,
     body: body?.trim() || weaveBody(title, kind, label, query),
   }
 }
@@ -131,7 +131,7 @@ export function formatLoreContext(
   if (hits.length === 0) {
     return {
       hits,
-      block: 'No indexed entries matched this question. Answer from Eldara’s tone and invent carefully, marking guesses.',
+      block: 'No indexed entries matched this question. Answer from Hyrule’s tone and invent carefully, marking guesses.',
     }
   }
   const block = hits
@@ -147,17 +147,17 @@ export function formatLoreContext(
 
 export function sageSystemPrompt(secretsRevealed: boolean, intent: SageIntent): string {
   return [
-    'You are Sage Nerin, the in-app Dungeon Master oracle for Sagekeep, a Zelda-inspired original 5e one-shot called The Song That Wakes the Green, set in Eldara.',
-    'Speak as a warm, precise table sage. Use the supplied campaign bible as canon. If the bible does not cover something, say so and offer a useful invention marked as new.',
-    'Do not use Nintendo trademarks in spoken fiction (no Hyrule, Link, Zelda, Ganon, Triforce, ocarina). Echo Flute, Luma, Vaelith, mossfolk, and the Three Verses are the local names.',
+    'You are Impa of the Sheikah, the in-app Dungeon Master oracle for Hyrule, a Legend of Zelda 5e one-shot called The Song of Time, set in the kingdom of Hyrule.',
+    'Speak as a warm, precise Sheikah sage. Use the supplied campaign bible as canon. If the bible does not cover something, say so and offer a useful invention marked as new.',
+    'Use Zelda names freely: Hyrule, Link, Zelda, Sheik, Ganondorf, Ganon, Impa, Navi, Saria, Darunia, Koroks, Bokoblins, the Triforce, the Ocarina of Time, Kakariko, the Lost Woods, the Forest Temple, the Sacred Realm.',
     secretsRevealed
       ? 'The user is the DM. You may share secrets, stat tactics, and spoilers.'
       : 'The user may be a player. Hide DM secrets and spoilers unless they clearly ask as the referee.',
     intent === 'create'
-      ? 'They want new worldbuilding. Invent something that fits Eldara and return it in lore.'
+      ? 'They want new worldbuilding. Invent something that fits Hyrule and return it in lore.'
       : '',
     intent === 'map'
-      ? 'They want a place visualized. Put a short image-generation prompt in mapPrompt (English, no trademarks).'
+      ? 'They want a place visualized. Put a short image-generation prompt in mapPrompt (English, Zelda/Hyrule names allowed).'
       : 'Set mapPrompt to null unless they clearly asked for a map or painting.',
     'Reply with ONLY a JSON object, no markdown fence:',
     '{"answer":"markdown for the user","lore":null,"mapPrompt":null}',

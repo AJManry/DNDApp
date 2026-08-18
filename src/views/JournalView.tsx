@@ -1,8 +1,8 @@
 import { CAMPAIGN, scenes } from '../data/campaign'
-import { useSagekeep } from '../state/store'
+import { useHyrule } from '../state/store'
 
 export function JournalView() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   const recap = scenes
     .filter((s) => state.completedSceneIds.includes(s.id))
     .map((s) => `• ${s.title}: ${s.boxedText.slice(0, 120)}…`)
@@ -33,7 +33,7 @@ export function JournalView() {
           <button
             className="danger"
             onClick={() => {
-              if (window.confirm('Reset Sagekeep table state? Party, maps, and notes will return to defaults.')) {
+              if (window.confirm('Reset Hyrule table state? Party, maps, and notes will return to defaults.')) {
                 dispatch({ type: 'reset' })
               }
             }}
@@ -58,7 +58,7 @@ export function JournalView() {
         )}
         <h2>Play from any machine</h2>
         <p>
-          Sagekeep is built for the web. After GitHub Pages is enabled on this repo, play at{' '}
+          Hyrule is built for the web. After GitHub Pages is enabled on this repo, play at{' '}
           <a href="https://ajmanry.github.io/DNDApp/" target="_blank" rel="noreferrer">
             ajmanry.github.io/DNDApp
           </a>

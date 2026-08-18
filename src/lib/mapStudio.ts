@@ -18,8 +18,8 @@ export const BIOMES = [
 export type Biome = (typeof BIOMES)[number]
 
 const BIOME_WORDS: Record<Biome, string[]> = {
-  forest: ['forest', 'woods', 'woodland', 'grove', 'jungle', 'echoes', 'trees'],
-  village: ['village', 'town', 'hamlet', 'windfall', 'settlement'],
+  forest: ['forest', 'woods', 'woodland', 'grove', 'jungle', 'echoes', 'trees', 'lost woods', 'kokiri'],
+  village: ['village', 'town', 'hamlet', 'kakariko', 'windfall', 'settlement'],
   dungeon: ['dungeon', 'crypt', 'labyrinth', 'rooms', 'keys'],
   temple: ['temple', 'shrine', 'sanctum', 'ziggurat'],
   mountain: ['mountain', 'peak', 'plateau', 'mesa', 'cliff'],
@@ -49,9 +49,9 @@ export function detectBiome(prompt: string): Biome {
 export function enhancePrompt(prompt: string): string {
   const biome = detectBiome(prompt)
   return [
-    'Hand-painted fantasy cartography and cinematic concept art,',
-    'Zelda-inspired original world, no copyrighted characters or logos,',
-    'gold ink, forest green watercolor, twilight purple mist, aged parchment,',
+    'Hand-painted fantasy cartography and cinematic concept art of Hyrule,',
+    'The Legend of Zelda world: Triforce gold, Kokiri green, twilight purple,',
+    'gold ink, forest green watercolor, aged parchment, Hylian architecture,',
     `biome: ${biome}.`,
     prompt.trim(),
     'Highly detailed, readable landmarks, ornate vine compass rose.',

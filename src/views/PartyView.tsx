@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { ALL_SKILLS, abilityMod, formatMod, skillBonus } from '../data/skills'
-import { useSagekeep } from '../state/store'
+import { useHyrule } from '../state/store'
 import type { Character, InventoryItem } from '../types'
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Frightened', 'Grappled', 'Poisoned', 'Prone', 'Restrained', 'Stunned']
 
 export function PartyView() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   const selected = state.party.find((c) => c.id === state.selectedCharacterId) ?? state.party[0]
 
   return (
@@ -22,6 +22,7 @@ export function PartyView() {
               <strong>{c.name}</strong>
               <span>{c.virtue ?? '—'}</span>
             </header>
+            {c.portrait ? <img className="pc-portrait" src={c.portrait} alt="" /> : null}
             <p>
               {c.ancestry} {c.className}
             </p>
@@ -55,7 +56,7 @@ function HpBar({ hp }: { hp: { current: number; max: number } }) {
 }
 
 function Sheet({ character }: { character: Character }) {
-  const { dispatch } = useSagekeep()
+  const { dispatch } = useHyrule()
   const [itemName, setItemName] = useState('')
   const prof = 2
   const patch = (p: Partial<Character>) => dispatch({ type: 'patch-character', id: character.id, patch: p })
@@ -331,7 +332,7 @@ function blankHero(): Character {
   return {
     id: `pc-${Date.now()}`,
     name: 'New adventurer',
-    ancestry: 'Human',
+    ancestry: 'Hylian',
     className: 'Fighter 3',
     level: 3,
     hp: { current: 22, max: 22 },

@@ -2,8 +2,8 @@ import type { StatBlock } from '../types'
 
 export const bestiary: StatBlock[] = [
   {
-    id: 'twilight-wisp',
-    name: 'Twilight Wisp',
+    id: 'poe',
+    name: 'Poe',
     cr: '1/2',
     type: 'Tiny undead',
     ac: 13,
@@ -11,7 +11,7 @@ export const bestiary: StatBlock[] = [
     speed: '0 ft., fly 40 ft. (hover)',
     stats: { str: 1, dex: 16, con: 10, int: 6, wis: 12, cha: 14 },
     traits: [
-      'Incorporeal Drift. The wisp can move through creatures and objects as difficult terrain. It takes 3 (1d6) force damage if it ends its turn inside an object.',
+      'Incorporeal Drift. The Poe can move through creatures and objects as difficult terrain. It takes 3 (1d6) force damage if it ends its turn inside an object.',
       'Gloomglow. Dim purple light in a 10-foot radius. In that light, Wisdom (Perception) checks that rely on hearing have disadvantage — the air hums off-key.',
     ],
     actions: [
@@ -26,8 +26,8 @@ export const bestiary: StatBlock[] = [
     ],
   },
   {
-    id: 'tusker-raider',
-    name: 'Tusker Raider',
+    id: 'bokoblin',
+    name: 'Bokoblin',
     cr: '1',
     type: 'Medium humanoid',
     ac: 14,
@@ -35,7 +35,7 @@ export const bestiary: StatBlock[] = [
     speed: '30 ft.',
     stats: { str: 15, dex: 12, con: 14, int: 8, wis: 10, cha: 8 },
     traits: [
-      'Pack Howl. Advantage on attack rolls against a creature if at least one allied tusker is within 5 feet of the target and not incapacitated.',
+      'Pack Howl. Advantage on attack rolls against a creature if at least one allied Bokoblin is within 5 feet of the target and not incapacitated.',
     ],
     actions: [
       {
@@ -49,8 +49,8 @@ export const bestiary: StatBlock[] = [
     ],
   },
   {
-    id: 'root-snapper',
-    name: 'Root Snapper',
+    id: 'deku-baba',
+    name: 'Deku Baba',
     cr: '1',
     type: 'Medium plant',
     ac: 13,
@@ -58,18 +58,18 @@ export const bestiary: StatBlock[] = [
     speed: '20 ft., burrow 10 ft.',
     stats: { str: 14, dex: 8, con: 16, int: 3, wis: 10, cha: 4 },
     traits: [
-      'False Appearance. While motionless among vines, it is indistinguishable from temple growth.',
+      'False Appearance. While motionless among vines, it is indistinguishable from Forest Temple growth.',
     ],
     actions: [
       {
         name: 'Bite',
-        text: 'Melee Weapon Attack: +4 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) piercing damage, and the target is grappled (escape DC 12). Until the grapple ends, the snapper cannot bite another target.',
+        text: 'Melee Weapon Attack: +4 to hit, reach 10 ft., one target. Hit: 8 (1d10 + 3) piercing damage, and the target is grappled (escape DC 12). Until the grapple ends, the Baba cannot bite another target.',
       },
     ],
   },
   {
-    id: 'captain-of-bone',
-    name: 'Captain of Bone',
+    id: 'heros-shade',
+    name: 'The Hero’s Shade',
     cr: '3',
     type: 'Medium undead',
     ac: 16,
@@ -83,7 +83,7 @@ export const bestiary: StatBlock[] = [
     actions: [
       {
         name: 'Multiattack',
-        text: 'The captain makes two rusted-longsword attacks.',
+        text: 'The Shade makes two rusted-longsword attacks.',
       },
       {
         name: 'Rusted Longsword',
@@ -91,13 +91,13 @@ export const bestiary: StatBlock[] = [
       },
       {
         name: 'Rally the Hollow (1/day)',
-        text: 'Two twilight wisps (or skeletal fragments with 6 hp, AC 12, +3/1d6) rise in unoccupied spaces within 20 feet.',
+        text: 'Two Poes (or skeletal fragments with 6 hp, AC 12, +3/1d6) rise in unoccupied spaces within 20 feet.',
       },
     ],
   },
   {
-    id: 'sleeping-construct',
-    name: 'The Sleeping Construct',
+    id: 'armogohma',
+    name: 'Armogohma',
     cr: '4',
     type: 'Large construct',
     ac: 15,
@@ -105,13 +105,13 @@ export const bestiary: StatBlock[] = [
     speed: '30 ft., climb 20 ft.',
     stats: { str: 18, dex: 10, con: 16, int: 6, wis: 12, cha: 6 },
     traits: [
-      'Vineheart. If a creature plays a note on the Echo Flute as an action (DC 12 Performance or a spell slot), the construct has disadvantage on its next attack and the vines loosen — its AC drops to 13 until the start of its next turn.',
+      'Vineheart. If a creature plays a note on the Ocarina of Time as an action (DC 12 Performance or a spell slot), Armogohma has disadvantage on its next attack and the vines loosen — its AC drops to 13 until the start of its next turn.',
       'Awakened Wrongly. The first time it is reduced below 30 hp, it slams the floor. Each creature on the ground must succeed on a DC 13 Dexterity save or fall prone.',
     ],
     actions: [
       {
         name: 'Multiattack',
-        text: 'The construct makes one slam and one vine lash.',
+        text: 'Armogohma makes one slam and one vine lash.',
       },
       {
         name: 'Slam',
@@ -124,26 +124,26 @@ export const bestiary: StatBlock[] = [
     ],
   },
   {
-    id: 'lord-vaelith',
-    name: 'Lord Vaelith the Usurper',
+    id: 'ganondorf',
+    name: 'Ganondorf, King of Twilight',
     cr: '5',
-    type: 'Medium humanoid (twilight-touched)',
+    type: 'Medium humanoid (Gerudo, twilight-touched)',
     ac: 17,
     hp: 95,
     speed: '30 ft., fly 20 ft. (hover, phase 2 only)',
     stats: { str: 18, dex: 14, con: 16, int: 13, wis: 12, cha: 16 },
     traits: [
-      'Two Phases. Phase 1 (95–48 hp): armored knight. Phase 2 (47–0): the plate splits and a shadow-beast of living twilight pours out. He gains fly 20 ft. and resistance to nonmagical bludgeoning, piercing, and slashing.',
-      'Virtue Weakness. Attacks empowered by a spent Virtue (see campaign rules) deal an extra 1d8 damage and ignore his resistance.',
+      'Two Phases. Phase 1 (95–48 hp): armored Gerudo king. Phase 2 (47–0): the plate splits and Ganon, a shadow-beast of living twilight, pours out. He gains fly 20 ft. and resistance to nonmagical bludgeoning, piercing, and slashing.',
+      'Triforce Weakness. Attacks empowered by a spent Triforce virtue (see campaign rules) deal an extra 1d8 damage and ignore his resistance.',
       'Lair — The Dais. While he stands on the circular dais, he can use a legendary action.',
     ],
     actions: [
       {
         name: 'Multiattack',
-        text: 'Vaelith makes two duskblade attacks, or one duskblade and one Gloom Grasp.',
+        text: 'Ganondorf makes two Twilight Blade attacks, or one Twilight Blade and one Gloom Grasp.',
       },
       {
-        name: 'Duskblade',
+        name: 'Twilight Blade',
         text: 'Melee Weapon Attack: +7 to hit, reach 5 ft., one target. Hit: 11 (1d10 + 6) slashing plus 4 (1d8) necrotic damage.',
       },
       {
@@ -152,13 +152,13 @@ export const bestiary: StatBlock[] = [
       },
       {
         name: 'Unmake the Measure (Recharge 5–6, phase 2)',
-        text: 'Twilight crashes across the plateau. Each enemy within 30 feet must make a DC 14 Constitution save, taking 18 (4d8) necrotic damage on a failure or half on a success. A creature that has sung or played a verse of the Waking Song this encounter has advantage.',
+        text: 'Twilight crashes across the Sacred Realm. Each enemy within 30 feet must make a DC 14 Constitution save, taking 18 (4d8) necrotic damage on a failure or half on a success. A creature that has sung or played a verse of the Song of Time this encounter has advantage.',
       },
     ],
     legendary: [
       {
         name: 'Step Between Events (1 action)',
-        text: 'Vaelith teleports up to 20 feet to a space he can see. If he leaves the dais, he cannot use this again until he returns.',
+        text: 'Ganondorf teleports up to 20 feet to a space he can see. If he leaves the dais, he cannot use this again until he returns.',
       },
     ],
   },

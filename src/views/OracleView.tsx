@@ -9,7 +9,7 @@ import {
 } from '../lib/cursorAgent'
 import { LLM_PRESETS, type LlmSettings } from '../lib/llm'
 import { searchLore } from '../lib/search'
-import { useSagekeep } from '../state/store'
+import { useHyrule } from '../state/store'
 import type { LoreKind } from '../types'
 
 const KINDS: { id: LoreKind | 'all'; label: string }[] = [
@@ -25,16 +25,16 @@ const KINDS: { id: LoreKind | 'all'; label: string }[] = [
 ]
 
 const SUGGESTIONS = [
-  'Who is Lord Vaelith, and how should I play him at the table?',
-  'Where is the Echo Flute and what does a true note do?',
-  'How does the Twilight Clock work if we linger in the forest?',
-  'Walk me through the Temple of the Green Blade puzzles',
-  'Create a lakeside shrine to a sky whale that still hears the Waking Song',
-  'Map of a mossfolk village in giant roots',
+  'Who is Ganondorf, and how should I play him at the table?',
+  'Where is the Ocarina of Time and what does a true note do?',
+  'How does the Twilight Clock work if we linger in the Lost Woods?',
+  'Walk me through the Forest Temple puzzles',
+  'Create a lakeside shrine to Lord Jabu-Jabu that still hears the Song of Time',
+  'Map of a Korok village in giant roots',
 ]
 
 export function OracleView() {
-  const { state, dispatch, askOracle, llmSettings, setLlmSettings } = useSagekeep()
+  const { state, dispatch, askOracle, llmSettings, setLlmSettings } = useHyrule()
   const [kind, setKind] = useState<(typeof KINDS)[number]['id']>('all')
   const [showModel, setShowModel] = useState(
     () => isCursorProvider(llmSettings) && !llmSettings.apiKey.trim(),
@@ -50,12 +50,12 @@ export function OracleView() {
     <div className="oracle">
       <div className="oracle-chat">
         <div className="oracle-intro">
-          <img src={asset('art/portrait-sage-nerin.jpg')} alt="Sage Nerin" />
+          <img src={asset('art/portrait-impa.jpg')} alt="Impa" />
           <div>
-            <h1>Oracle of Eldara</h1>
+            <h1>Oracle of Hyrule</h1>
             <p>
-              Sage Nerin answers through <strong>your Cursor Cloud Agent</strong>, searching this campaign repo and
-              billing your Cursor tokens. Paste an API key once, then ask how to run a scene, invent a place, or
+              Impa of the Sheikah answers through <strong>your Cursor Cloud Agent</strong>, searching this campaign repo
+              and billing your Cursor tokens. Paste an API key once, then ask how to run a scene, invent a place, or
               describe a map.
             </p>
             <button className="ghost" type="button" onClick={() => setShowModel((v) => !v)}>
@@ -73,7 +73,7 @@ export function OracleView() {
         </div>
         <div className="thread">
           {state.oracleThread.length === 0 ? (
-            <p className="empty">Ask anything about Windfall, the verses, Vaelith, pacing, or the temple keys.</p>
+            <p className="empty">Ask anything about Kakariko, the Triforce, Ganondorf, pacing, or the temple keys.</p>
           ) : (
             state.oracleThread.map((m) => (
               <div key={m.id} className={`bubble ${m.role}${m.pending ? ' pending' : ''}`}>
@@ -105,7 +105,7 @@ export function OracleView() {
                 askOracle(state.oracleQuery)
               }
             }}
-            placeholder="Ask the sage… Cursor will search Eldara’s bible"
+            placeholder="Ask Impa… Cursor will search Hyrule’s bible"
           />
           <button type="submit" disabled={state.oracleBusy}>
             {state.oracleBusy ? 'Listening…' : 'Consult'}
@@ -121,7 +121,7 @@ export function OracleView() {
           ))}
         </div>
         <ul className="hit-list">
-          {(state.oracleQuery ? liveHits : searchLore(corpus, 'eldara waking song', 8).concat(liveHits))
+          {(state.oracleQuery ? liveHits : searchLore(corpus, 'hyrule song of time', 8).concat(liveHits))
             .filter((h, i, arr) => arr.findIndex((x) => x.entry.id === h.entry.id) === i)
             .filter((h) => (kind === 'all' ? true : h.entry.kind === kind))
             .slice(0, 12)
@@ -332,7 +332,7 @@ function ModelSettings({
 function lastUserQuery(state: { oracleQuery: string; oracleThread: { role: string; text: string }[] }): string {
   if (state.oracleQuery.trim()) return state.oracleQuery
   const last = [...state.oracleThread].reverse().find((m) => m.role === 'user')
-  return last?.text ?? 'eldara'
+  return last?.text ?? 'hyrule'
 }
 
 function RichText({ text }: { text: string }) {

@@ -11,7 +11,7 @@ export interface LlmSettings {
   cursorProxyUrl?: string
 }
 
-export const LLM_STORAGE_KEY = 'sagekeep-llm-v1'
+export const LLM_STORAGE_KEY = 'hyrule-llm-v1'
 
 export const POLLINATIONS_CHAT_URL = 'https://text.pollinations.ai/openai'
 
@@ -61,7 +61,7 @@ export function defaultLlmSettings(): LlmSettings {
     model: '',
     cursorAgentId: '',
     cursorRepoUrl: 'https://github.com/AJManry/DNDApp',
-    cursorRef: 'cursor/sagekeep-dm-app-cee4',
+    cursorRef: 'cursor/zelda-hyrule-theme-3415',
     cursorSearchRepo: true,
     cursorProxyUrl: '',
   }

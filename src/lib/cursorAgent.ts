@@ -4,7 +4,7 @@ export const CURSOR_SCHEME = 'cursor://cloud-agent'
 export const CURSOR_API_ORIGIN = 'https://api.cursor.com'
 export const CURSOR_DASHBOARD_KEYS = 'https://cursor.com/dashboard/api'
 export const DEFAULT_CURSOR_REPO = 'https://github.com/AJManry/DNDApp'
-export const DEFAULT_CURSOR_REF = 'cursor/sagekeep-dm-app-cee4'
+export const DEFAULT_CURSOR_REF = 'cursor/zelda-hyrule-theme-3415'
 
 const POLL_MS = 2500
 const MAX_WAIT_MS = 8 * 60 * 1000
@@ -43,11 +43,11 @@ export function cursorAgentUrl(agentId: string): string {
 export function buildCursorPrompt(messages: ChatMessage[]): string {
   const body = messages.map((m) => `### ${m.role}\n${m.content}`).join('\n\n')
   return [
-    'You are answering a Sagekeep Oracle question from inside a Cursor Cloud Agent.',
+    'You are answering a Hyrule Oracle question from inside a Cursor Cloud Agent.',
     'This is a READ-ONLY lookup. Do not edit, create, delete, commit, or push files.',
     'Do not open a pull request. Do not run git write commands. Do not use computer-use.',
     'You MAY search this repository: Grep/Read src/data/campaign.ts, lore.ts, bestiary.ts, pregens.ts, maps.ts and related files. Treat those files as canon.',
-    'Then answer as Sage Nerin. Reply with ONLY a JSON object, no markdown fence:',
+    'Then answer as Impa of the Sheikah. Use Zelda names (Hyrule, Link, Ganondorf, Ocarina of Time, Triforce). Reply with ONLY a JSON object, no markdown fence:',
     '{"answer":"markdown for the user","lore":null,"mapPrompt":null}',
     '',
     body,
@@ -109,7 +109,7 @@ async function createAgent(
 ): Promise<{ agentId: string; runId: string }> {
   const body: Record<string, unknown> = {
     prompt: { text: prompt },
-    name: 'Sagekeep Oracle',
+    name: 'Hyrule Oracle',
     autoCreatePR: false,
     workOnCurrentBranch: false,
   }
@@ -229,7 +229,7 @@ async function cursorFetch<T>(path: string, settings: LlmSettings, init: Request
   } catch (err) {
     if (isCorsFailure(err)) {
       throw new Error(
-        'The browser blocked api.cursor.com (CORS). Run Sagekeep with `npm run dev` (Vite proxies Cursor), or set a same-origin Cursor API proxy in Model settings.',
+        'The browser blocked api.cursor.com (CORS). Run Hyrule with `npm run dev` (Vite proxies Cursor), or set a same-origin Cursor API proxy in Model settings.',
       )
     }
     throw err

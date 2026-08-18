@@ -2,7 +2,7 @@ import { pregens } from '../data/pregens'
 import { scenes } from '../data/campaign'
 import type { AppState } from '../types'
 
-export const STORAGE_KEY = 'sagekeep-state-v1'
+export const STORAGE_KEY = 'hyrule-state-v1'
 
 export function defaultState(): AppState {
   return {

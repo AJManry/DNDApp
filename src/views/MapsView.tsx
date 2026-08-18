@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import { campaignMaps } from '../data/maps'
 import { asset } from '../lib/assets'
 import { makeGeneratedMap, svgMap } from '../lib/mapStudio'
-import { useSagekeep } from '../state/store'
+import { useHyrule } from '../state/store'
 
 export function MapsView() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   const pending = state.oracleThread.map((m) => m.mapPrompt).filter((p): p is string => Boolean(p))
-  const [prompt, setPrompt] = useState(pending.at(-1) ?? 'Twilight forest shrine with three leaf-stones and a gold path')
+  const [prompt, setPrompt] = useState(pending.at(-1) ?? 'Lost Woods shrine with three Triforce stones and a gold fairy path')
   const latest = state.maps[0]
   const svg = useMemo(() => svgMap(latest?.prompt ?? prompt), [latest?.prompt, prompt])
 
@@ -24,8 +24,8 @@ export function MapsView() {
           <p className="kicker">Cartographer</p>
           <h1>Paint the world from a prompt</h1>
           <p className="lede">
-            Describe a place. Sagekeep renders a graphic painting (via a cloud image model) and an inked table map you
-            can use immediately. Campaign maps for the Zelda-inspired one-shot live in the gallery below.
+            Describe a place. Hyrule renders a graphic painting (via a cloud image model) and an inked table map you
+            can use immediately. Campaign maps for The Song of Time live in the gallery below.
           </p>
         </div>
         <form
@@ -49,7 +49,7 @@ export function MapsView() {
           {latest ? (
             <img src={latest.imageUrl} alt={latest.prompt} />
           ) : (
-            <img src={asset('art/map-eldara-region.jpg')} alt="Eldara" />
+            <img src={asset('art/map-hyrule-region.jpg')} alt="Hyrule" />
           )}
           <figcaption>
             {latest ? (
@@ -57,7 +57,7 @@ export function MapsView() {
                 Painted from: {latest.prompt} · biome {latest.biome}
               </>
             ) : (
-              'Regional map of Eldara — generate your own above'
+              'Regional map of Hyrule — generate your own above'
             )}
           </figcaption>
         </figure>
@@ -66,7 +66,7 @@ export function MapsView() {
           <figcaption>Cartographer’s ink (always available offline)</figcaption>
         </figure>
       </div>
-      <h2>The Song That Wakes the Green</h2>
+      <h2>The Song of Time</h2>
       <div className="gallery">
         {campaignMaps.map((m) => (
           <button

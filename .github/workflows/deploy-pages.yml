@@ -1,8 +1,8 @@
-name: Deploy Sagekeep site
+name: Deploy Hyrule site
 
 on:
   push:
-    branches: [main, cursor/sagekeep-dm-app-cee4]
+    branches: [main, cursor/zelda-hyrule-theme-3415]
   workflow_dispatch:
 
 permissions:

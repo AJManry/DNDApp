@@ -1,11 +1,11 @@
 import { acts, CAMPAIGN, scenes, virtueRules } from '../data/campaign'
 import { bestiary } from '../data/bestiary'
 import { campaignMaps } from '../data/maps'
-import { useSagekeep } from '../state/store'
+import { useHyrule } from '../state/store'
 import type { Scene, StatBlock } from '../types'
 
 export function PlayView() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   const scene = scenes.find((s) => s.id === state.sceneId) ?? scenes[0]
   const map = campaignMaps.find((m) => m.id === scene.mapId)
   const monsters = (scene.encounterIds ?? [])
@@ -125,7 +125,7 @@ function suggestedScene(elapsedMs: number): Scene | undefined {
 }
 
 function TwilightClock() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   return (
     <div className="dock-card">
       <h3>Twilight Clock</h3>
@@ -141,17 +141,17 @@ function TwilightClock() {
       </div>
       <p className="hint">
         {state.twilightClock >= 6
-          ? 'Vaelith begins in phase 2. Windfall is scarred.'
+          ? 'Ganondorf begins in phase 2. Kakariko is scarred.'
           : state.twilightClock >= 4
-            ? 'The well has gone dark.'
-            : 'Advance for detours, noisy failures, or forest rests.'}
+            ? 'Kakariko’s well has gone dark.'
+            : 'Advance for detours, noisy failures, or Lost Woods rests.'}
       </p>
     </div>
   )
 }
 
 function DiceTray() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   return (
     <div className="dock-card">
       <h3>Dice</h3>
@@ -190,7 +190,7 @@ function RulesStrip() {
 }
 
 function InitiativeBox() {
-  const { state, dispatch } = useSagekeep()
+  const { state, dispatch } = useHyrule()
   const scene = scenes.find((s) => s.id === state.sceneId)
   return (
     <div className="dock-card">
