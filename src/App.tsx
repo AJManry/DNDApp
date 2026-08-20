@@ -11,7 +11,7 @@ import type { TabId } from './types'
 const TABS: { id: TabId; label: string; hint: string }[] = [
   { id: 'play', label: 'Table', hint: 'Run the one-shot' },
   { id: 'oracle', label: 'Oracle', hint: 'Ask the world' },
-  { id: 'maps', label: 'Maps', hint: 'Paint Hyrule' },
+  { id: 'maps', label: 'Maps', hint: 'Tokens & range' },
   { id: 'party', label: 'Party', hint: 'HP, skills, gear' },
   { id: 'journal', label: 'Chronicle', hint: 'Notes & recap' },
 ]

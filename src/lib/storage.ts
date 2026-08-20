@@ -23,6 +23,8 @@ export function defaultState(): AppState {
     maps: [],
     secretsRevealed: true,
     diceLog: [],
+    tactics: {},
+    activeMapId: scenes[0]?.mapId ?? 'map-kakariko',
   }
 }
 

@@ -11,12 +11,14 @@ import {
   type ReactNode,
 } from 'react'
 import { allLore } from '../data/corpus'
+import { scenes } from '../data/campaign'
 import { rollDice } from '../lib/dice'
 import { isCursorProvider } from '../lib/cursorAgent'
 import { loadLlmSettings, saveLlmSettings, type LlmSettings } from '../lib/llm'
 import { makeGeneratedMap } from '../lib/mapStudio'
 import { askSage, type SageAskResult } from '../lib/sage'
 import { defaultState, loadState, saveState } from '../lib/storage'
+import { emptyTactics } from '../lib/tactics'
 import type {
   AppState,
   Character,
@@ -24,6 +26,8 @@ import type {
   GeneratedMap,
   InventoryItem,
   LoreEntry,
+  MapTactics,
+  MapToken,
   TabId,
 } from '../types'
 
@@ -51,6 +55,12 @@ type Action =
   | { type: 'initiative'; list: Combatant[] }
   | { type: 'roll'; expr: string; label?: string }
   | { type: 'add-map'; map: GeneratedMap }
+  | { type: 'set-tactics'; board: MapTactics }
+  | { type: 'move-token'; mapId: string; tokenId: string; x: number; y: number }
+  | { type: 'add-token'; mapId: string; token: MapToken }
+  | { type: 'remove-token'; mapId: string; tokenId: string }
+  | { type: 'patch-tactics'; mapId: string; patch: Partial<Pick<MapTactics, 'showGrid' | 'gridCols' | 'feetPerSquare'>> }
+  | { type: 'active-map'; id: string }
   | { type: 'reset' }
 
 function reducer(state: AppState, action: Action): AppState {
@@ -121,8 +131,14 @@ function reducer(state: AppState, action: Action): AppState {
             : m,
         ),
       }
-    case 'scene':
-      return { ...state, sceneId: action.id }
+    case 'scene': {
+      const next = scenes.find((s) => s.id === action.id)
+      return {
+        ...state,
+        sceneId: action.id,
+        activeMapId: next?.mapId ?? state.activeMapId,
+      }
+    }
     case 'toggle-scene': {
       const has = state.completedSceneIds.includes(action.id)
       return {
@@ -161,6 +177,7 @@ function reducer(state: AppState, action: Action): AppState {
         party: state.party.filter((c) => c.id !== action.id),
         selectedCharacterId:
           state.selectedCharacterId === action.id ? (state.party[0]?.id ?? null) : state.selectedCharacterId,
+        tactics: stripTokenRef(state.tactics, `pc-${action.id}`),
       }
     case 'add-item':
       return {
@@ -209,7 +226,54 @@ function reducer(state: AppState, action: Action): AppState {
       }
     }
     case 'add-map':
-      return { ...state, maps: upsertMap(state.maps, action.map) }
+      return { ...state, maps: upsertMap(state.maps, action.map), activeMapId: action.map.id }
+    case 'set-tactics':
+      return { ...state, tactics: { ...state.tactics, [action.board.mapId]: action.board } }
+    case 'move-token': {
+      const board = state.tactics[action.mapId] ?? emptyTactics(action.mapId)
+      return {
+        ...state,
+        tactics: {
+          ...state.tactics,
+          [action.mapId]: {
+            ...board,
+            tokens: board.tokens.map((t) =>
+              t.id === action.tokenId ? { ...t, x: action.x, y: action.y } : t,
+            ),
+          },
+        },
+      }
+    }
+    case 'add-token': {
+      const board = state.tactics[action.mapId] ?? emptyTactics(action.mapId)
+      return {
+        ...state,
+        tactics: {
+          ...state.tactics,
+          [action.mapId]: { ...board, tokens: [...board.tokens, action.token] },
+        },
+      }
+    }
+    case 'remove-token': {
+      const board = state.tactics[action.mapId]
+      if (!board) return state
+      return {
+        ...state,
+        tactics: {
+          ...state.tactics,
+          [action.mapId]: { ...board, tokens: board.tokens.filter((t) => t.id !== action.tokenId) },
+        },
+      }
+    }
+    case 'patch-tactics': {
+      const board = state.tactics[action.mapId] ?? emptyTactics(action.mapId)
+      return {
+        ...state,
+        tactics: { ...state.tactics, [action.mapId]: { ...board, ...action.patch } },
+      }
+    }
+    case 'active-map':
+      return { ...state, activeMapId: action.id }
     case 'reset':
       return defaultState()
     default:
@@ -219,6 +283,14 @@ function reducer(state: AppState, action: Action): AppState {
 
 function upsertMap(maps: GeneratedMap[], map: GeneratedMap): GeneratedMap[] {
   return [map, ...maps.filter((m) => m.id !== map.id)].slice(0, 24)
+}
+
+function stripTokenRef(tactics: Record<string, MapTactics>, tokenId: string): Record<string, MapTactics> {
+  const next: Record<string, MapTactics> = {}
+  for (const [id, board] of Object.entries(tactics)) {
+    next[id] = { ...board, tokens: board.tokens.filter((t) => t.id !== tokenId && t.refId !== tokenId.replace(/^pc-/, '')) }
+  }
+  return next
 }
 
 interface StoreValue {

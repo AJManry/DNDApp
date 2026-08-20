@@ -3,6 +3,7 @@ import { campaignMaps } from '../data/maps'
 import { asset } from '../lib/assets'
 import { makeGeneratedMap, svgMap } from '../lib/mapStudio'
 import { useHyrule } from '../state/store'
+import { MapBoard } from './MapBoard'
 
 export function MapsView() {
   const { state, dispatch } = useHyrule()
@@ -10,8 +11,12 @@ export function MapsView() {
   const [prompt, setPrompt] = useState(
     pending.at(-1) ?? 'Hyrule Field at golden hour, sky islands, Sheikah shrine, cream parchment map',
   )
-  const latest = state.maps[0]
-  const svg = useMemo(() => svgMap(latest?.prompt ?? prompt), [latest?.prompt, prompt])
+  const active =
+    campaignMaps.find((m) => m.id === state.activeMapId) ||
+    state.maps.find((m) => m.id === state.activeMapId) ||
+    campaignMaps[0]
+  const src = active?.artSrc || active?.imageUrl || asset('art/map-hyrule-region.jpg')
+  const svg = useMemo(() => svgMap(active?.prompt ?? prompt), [active?.prompt, prompt])
 
   function generate(next = prompt) {
     const q = next.trim()
@@ -19,15 +24,20 @@ export function MapsView() {
     dispatch({ type: 'add-map', map: makeGeneratedMap(q) })
   }
 
+  function openMap(id: string, nextPrompt?: string) {
+    if (nextPrompt) setPrompt(nextPrompt)
+    dispatch({ type: 'active-map', id })
+  }
+
   return (
     <div className="maps">
       <header className="maps-head">
         <div>
           <p className="kicker">Cartographer</p>
-          <h1>Paint the world from a prompt</h1>
+          <h1>Tactics on every map</h1>
           <p className="lede">
-            Describe a place. Maps render in a Breath of the Wild / Tears of the Kingdom palette — golden field-hour,
-            Sheikah cyan, Zonai teal-gold — plus an inked table map you can use immediately.
+            Deploy the party, NPCs, and scene foes as tokens. Drag to move, measure distance in 5e feet, and scale the
+            grid. Every campaign map and every painted map keeps its own positions.
           </p>
         </div>
         <form
@@ -46,26 +56,11 @@ export function MapsView() {
           <button type="submit">Create map</button>
         </form>
       </header>
+      <MapBoard mapId={active?.id ?? 'map-hyrule'} src={src} title={active?.title ?? active?.prompt} />
       <div className="map-stage">
-        <figure className="painting">
-          {latest ? (
-            <img src={latest.imageUrl} alt={latest.prompt} />
-          ) : (
-            <img src={asset('art/map-hyrule-region.jpg')} alt="Hyrule" />
-          )}
-          <figcaption>
-            {latest ? (
-              <>
-                Painted from: {latest.prompt} · biome {latest.biome}
-              </>
-            ) : (
-              'Regional map of Hyrule — generate your own above'
-            )}
-          </figcaption>
-        </figure>
         <figure className="ink-map">
           <div dangerouslySetInnerHTML={{ __html: svg }} />
-          <figcaption>Cartographer’s ink (always available offline)</figcaption>
+          <figcaption>Cartographer’s ink (offline schematic of this place)</figcaption>
         </figure>
       </div>
       <h2>The Song of Time</h2>
@@ -73,11 +68,8 @@ export function MapsView() {
         {campaignMaps.map((m) => (
           <button
             key={m.id}
-            className="thumb"
-            onClick={() => {
-              setPrompt(m.prompt)
-              dispatch({ type: 'add-map', map: { ...m, createdAt: Date.now() } })
-            }}
+            className={`thumb${m.id === state.activeMapId ? ' active' : ''}`}
+            onClick={() => openMap(m.id, m.prompt)}
           >
             <img src={m.artSrc} alt={m.title} />
             <span>{m.title}</span>
@@ -91,7 +83,11 @@ export function MapsView() {
             {state.maps
               .filter((m) => !m.campaign)
               .map((m) => (
-                <button key={m.id} className="thumb" onClick={() => dispatch({ type: 'add-map', map: m })}>
+                <button
+                  key={m.id}
+                  className={`thumb${m.id === state.activeMapId ? ' active' : ''}`}
+                  onClick={() => openMap(m.id, m.prompt)}
+                >
                   <img src={m.imageUrl} alt={m.prompt} />
                   <span>{m.title}</span>
                 </button>

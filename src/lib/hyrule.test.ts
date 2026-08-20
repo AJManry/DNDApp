@@ -7,6 +7,8 @@ import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages
 import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
+import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
+import { pregens } from '../data/pregens'
 
 describe('search', () => {
   it('tokenizes queries and drops stopwords', () => {
@@ -86,6 +88,39 @@ describe('maps and dice', () => {
     const r2 = rollDice('2d6+1')
     expect(r2.result).toBeGreaterThanOrEqual(3)
     expect(r2.result).toBeLessThanOrEqual(13)
+  })
+})
+
+describe('tactics board', () => {
+  it('uses 5e diagonal distance (max of axes)', () => {
+    const d = distanceOnGrid({ x: 0, y: 0 }, { x: 50, y: 0 }, 20, 1, 5)
+    expect(d.squares).toBe(10)
+    expect(d.feet).toBe(50)
+    const diag = distanceOnGrid({ x: 0, y: 0 }, { x: 50, y: 50 }, 20, 1, 5)
+    expect(diag.squares).toBe(10)
+    expect(diag.feet).toBe(50)
+  })
+
+  it('seeds party, Kakariko NPCs, and Poes', () => {
+    const tokens = seedTokens('map-kakariko', pregens, {
+      id: 's1-poes',
+      act: 1,
+      title: 'Poes',
+      minuteStart: 20,
+      minuteEnd: 30,
+      boxedText: '',
+      dmNotes: '',
+      mapId: 'map-kakariko',
+      encounterIds: ['poe'],
+    })
+    expect(tokens.some((t) => t.name === 'Link')).toBe(true)
+    expect(tokens.some((t) => t.name === 'Impa')).toBe(true)
+    expect(tokens.filter((t) => t.role === 'foe').length).toBe(3)
+  })
+
+  it('parses monster speed and formats range', () => {
+    expect(parseSpeed('30 ft., fly 40 ft. (hover)')).toBe(30)
+    expect(formatRange(35, 7, 30)).toMatch(/over speed/)
   })
 })
 

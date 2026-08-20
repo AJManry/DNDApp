@@ -3,6 +3,7 @@ import { bestiary } from '../data/bestiary'
 import { campaignMaps } from '../data/maps'
 import { useHyrule } from '../state/store'
 import type { Scene, StatBlock } from '../types'
+import { MapBoard } from './MapBoard'
 
 export function PlayView() {
   const { state, dispatch } = useHyrule()
@@ -74,10 +75,21 @@ export function PlayView() {
             </span>
           </header>
           {map ? (
-            <button className="scene-map" onClick={() => dispatch({ type: 'tab', tab: 'maps' })}>
-              <img src={map.artSrc} alt={map.title} />
-              <span>Open in Maps · {map.title}</span>
-            </button>
+            <div className="scene-tactics">
+              <header className="scene-tactics-head">
+                <span>Tactics · {map.title}</span>
+                <button
+                  className="ghost"
+                  onClick={() => {
+                    dispatch({ type: 'active-map', id: map.id })
+                    dispatch({ type: 'tab', tab: 'maps' })
+                  }}
+                >
+                  Full board
+                </button>
+              </header>
+              <MapBoard mapId={map.id} src={map.artSrc || map.imageUrl} title={map.title} compact />
+            </div>
           ) : null}
           <blockquote className="boxed">{scene.boxedText}</blockquote>
           {state.secretsRevealed ? (

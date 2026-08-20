@@ -137,6 +137,28 @@ export interface GeneratedMap {
   artSrc?: string
 }
 
+export type TokenRole = 'pc' | 'npc' | 'foe' | 'marker'
+
+export interface MapToken {
+  id: string
+  name: string
+  role: TokenRole
+  refId?: string
+  x: number
+  y: number
+  speed: number
+  portrait?: string
+  color: string
+}
+
+export interface MapTactics {
+  mapId: string
+  tokens: MapToken[]
+  showGrid: boolean
+  gridCols: number
+  feetPerSquare: number
+}
+
 export interface OracleMessage {
   id: string
   role: 'user' | 'sage'
@@ -174,4 +196,6 @@ export interface AppState {
   maps: GeneratedMap[]
   secretsRevealed: boolean
   diceLog: DiceLog[]
+  tactics: Record<string, MapTactics>
+  activeMapId: string
 }
