@@ -8,6 +8,7 @@ import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
 import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
+import { forgeFromPrompt, nameFromPrompt, parseCharacterReply } from './characterForge'
 import { pregens } from '../data/pregens'
 
 describe('search', () => {
@@ -170,5 +171,39 @@ describe('skills', () => {
         2,
       ),
     ).toBe(5)
+  })
+})
+
+describe('character forge', () => {
+  it('builds a Gerudo fighter from a prompt', () => {
+    const hero = forgeFromPrompt('A Gerudo swordswoman who left the desert after twilight took her sister')
+    expect(hero.ancestry).toBe('Gerudo')
+    expect(hero.className).toMatch(/Fighter/)
+    expect(hero.level).toBe(3)
+    expect(hero.inventory.length).toBeGreaterThan(0)
+    expect(hero.portrait).toMatch(/pollinations/)
+  })
+
+  it('extracts a given name', () => {
+    expect(nameFromPrompt('A scout named Mipha who left the Domain')).toBe('Mipha')
+    const hero = forgeFromPrompt('A Zora ranger named Mipha who left the Domain')
+    expect(hero.name).toBe('Mipha')
+    expect(hero.ancestry).toBe('Zora')
+    expect(hero.className).toMatch(/Ranger/)
+  })
+
+  it('parses a model JSON sheet', () => {
+    const draft = parseCharacterReply(
+      '{"name":"Tebael","ancestry":"Rito","className":"Ranger 3","virtue":"Courage","hp":24,"ac":14,"speed":30,"abilities":{"str":10,"dex":16,"con":14,"int":10,"wis":14,"cha":8},"proficientSkills":["Stealth"],"inventory":[{"name":"Eagle bow","qty":1,"rarity":"uncommon","notes":"+5","equipped":true}],"notes":"Flight Range scout."}',
+    )
+    expect(draft?.name).toBe('Tebael')
+    expect(draft?.ancestry).toBe('Rito')
+    expect(draft?.proficientSkills).toContain('Stealth')
+  })
+
+  it('defaults unnamed Hylians to Ranger', () => {
+    const hero = forgeFromPrompt('a quiet traveler who still hears the Song of Time')
+    expect(hero.ancestry).toBe('Hylian')
+    expect(hero.className).toMatch(/Ranger/)
   })
 })

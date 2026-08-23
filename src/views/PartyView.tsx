@@ -1,16 +1,94 @@
 import { useState } from 'react'
 import { ALL_SKILLS, abilityMod, formatMod, skillBonus } from '../data/skills'
+import { forgeFromPrompt, generateCharacterFromPrompt } from '../lib/characterForge'
 import { useHyrule } from '../state/store'
 import type { Character, InventoryItem } from '../types'
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Frightened', 'Grappled', 'Poisoned', 'Prone', 'Restrained', 'Stunned']
 
+const SUGGESTIONS = [
+  'A Gerudo swordswoman who left the desert after twilight took her sister',
+  'A Zora prince from the Domain who followed the Song of Time inland',
+  'A Rito sharpshooter from the Flight Range with a great eagle bow',
+  'A Sheikah monk from Kakariko who still serves Impa in secret',
+  'A Goron paladin of Death Mountain sworn to the Triforce of Power',
+]
+
 export function PartyView() {
   const { state, dispatch } = useHyrule()
   const selected = state.party.find((c) => c.id === state.selectedCharacterId) ?? state.party[0]
+  const [prompt, setPrompt] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [status, setStatus] = useState('')
+
+  async function generate(from = prompt) {
+    const q = from.trim()
+    if (!q || busy) return
+    setBusy(true)
+    setStatus('Impa is forging a sheet from your prompt…')
+    setPrompt(q)
+    try {
+      const hero = await generateCharacterFromPrompt(q)
+      dispatch({ type: 'add-character', character: hero })
+      setStatus(`Created ${hero.name}, ${hero.ancestry} ${hero.className}.`)
+    } catch (err) {
+      const hero = forgeFromPrompt(q)
+      dispatch({ type: 'add-character', character: hero })
+      setStatus(
+        `Forged ${hero.name} locally. ${err instanceof Error ? err.message : ''}`.trim(),
+      )
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="party">
+      <section className="forge">
+        <p className="kicker">Character creation</p>
+        <h1>Forge an adventurer</h1>
+        <p className="lede">
+          Describe a Hyrulean in a sentence — ancestry, vocation, and a wound or hope. The table forges a 3rd-level
+          sheet you can edit, with a portrait. If the Oracle is slow or unavailable, a local Hyrule kit is used.
+        </p>
+        <form
+          className="forge-form"
+          onSubmit={(e) => {
+            e.preventDefault()
+            void generate()
+          }}
+        >
+          <textarea
+            rows={3}
+            value={prompt}
+            disabled={busy}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="A Gerudo swordswoman who left the desert after twilight took her sister…"
+            aria-label="Character prompt"
+          />
+          <div className="forge-actions">
+            <button type="submit" disabled={busy || !prompt.trim()}>
+              {busy ? 'Forging…' : 'Generate from prompt'}
+            </button>
+            <button
+              type="button"
+              className="ghost"
+              disabled={busy}
+              onClick={() => dispatch({ type: 'add-character', character: blankHero() })}
+            >
+              Blank sheet
+            </button>
+          </div>
+        </form>
+        {status ? <p className="hint">{status}</p> : null}
+        <div className="chips">
+          {SUGGESTIONS.map((s) => (
+            <button key={s} type="button" disabled={busy} onClick={() => void generate(s)}>
+              {s}
+            </button>
+          ))}
+        </div>
+      </section>
       <div className="party-grid">
         {state.party.map((c) => (
           <button
@@ -34,9 +112,6 @@ export function PartyView() {
             </div>
           </button>
         ))}
-        <button className="pc-card add" onClick={() => dispatch({ type: 'add-character', character: blankHero() })}>
-          + New adventurer
-        </button>
       </div>
       {selected ? <Sheet character={selected} /> : null}
     </div>
