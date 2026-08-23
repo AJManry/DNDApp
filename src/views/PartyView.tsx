@@ -3,6 +3,7 @@ import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { generateCharacterFromPrompt, assembleCharacter } from '../lib/characterForge'
 import { normalizeCharacter } from '../lib/combatKit'
 import { CURSOR_DASHBOARD_KEYS } from '../lib/cursorAgent'
+import { loadLlmSettings } from '../lib/llm'
 import { useHyrule } from '../state/store'
 import type { Character, CombatMove, InventoryItem } from '../types'
 
@@ -22,12 +23,13 @@ export function PartyView() {
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
-  const hasCursorKey = Boolean(llmSettings.apiKey.trim())
+  const hasCursorKey = Boolean(llmSettings.apiKey.trim() || loadLlmSettings().apiKey.trim())
 
   async function generate(from = prompt) {
     const q = from.trim()
     if (!q || busy) return
-    if (!hasCursorKey) {
+    const settings = loadLlmSettings()
+    if (!settings.apiKey.trim()) {
       setStatus('Paste a Cursor API key in Oracle → Model settings. Forge uses your Cursor Cloud Agent only.')
       return
     }

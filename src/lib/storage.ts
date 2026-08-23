@@ -5,6 +5,7 @@ import { normalizeCharacter } from './combatKit'
 import type { AppState } from '../types'
 
 export const STORAGE_KEY = 'hyrule-state-v1'
+export const LEGACY_STORAGE_KEYS = ['sagekeep-state-v1'] as const
 
 export function defaultState(): AppState {
   return {
@@ -32,7 +33,7 @@ export function defaultState(): AppState {
 
 export function loadState(): AppState {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY)
+    const raw = localStorage.getItem(STORAGE_KEY) ?? readLegacyState()
     if (!raw) return defaultState()
     const parsed = JSON.parse(raw) as Partial<AppState>
     const thread = (parsed.oracleThread ?? []).filter((m) => !m.pending)
@@ -44,6 +45,14 @@ export function loadState(): AppState {
   } catch {
     return defaultState()
   }
+}
+
+function readLegacyState(): string | null {
+  for (const key of LEGACY_STORAGE_KEYS) {
+    const raw = localStorage.getItem(key)
+    if (raw) return raw
+  }
+  return null
 }
 
 export function saveState(state: AppState): void {

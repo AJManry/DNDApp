@@ -212,7 +212,7 @@ async function pollRun(agentId: string, runId: string, settings: LlmSettings): P
     )
     const status = pickString(data.status)?.toUpperCase() || ''
     if (status === 'FINISHED' || status === 'COMPLETED') {
-      const text = pickString(data.result) || pickNestedText(data)
+      const text = extractRunText(data) || (await fetchConversationText(agentId, settings))
       if (!text) throw new Error('Cursor finished without an Oracle reply.')
       return text
     }
@@ -331,6 +331,39 @@ function pickString(value: unknown): string | null {
 function pickNestedText(data: Record<string, unknown>): string | null {
   const result = asRecord(data.result)
   return pickString(result?.text) || pickString(result?.result)
+}
+
+function extractRunText(data: Record<string, unknown>): string | null {
+  const direct = pickString(data.result) || pickString(data.text)
+  if (direct) return direct
+  const nested = pickNestedText(data)
+  if (nested) return nested
+  const messages = data.messages
+  if (!Array.isArray(messages)) return null
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const m = asRecord(messages[i])
+    const type = `${pickString(m?.type) || ''} ${pickString(m?.role) || ''}`
+    if (!/assistant/i.test(type)) continue
+    const text = pickString(m?.text) || pickString(m?.content)
+    if (text) return text
+  }
+  return null
+}
+
+async function fetchConversationText(agentId: string, settings: LlmSettings): Promise<string | null> {
+  for (const path of [
+    `/v1/agents/${encodeURIComponent(agentId)}/conversation`,
+    `/v0/agents/${encodeURIComponent(agentId)}/conversation`,
+  ]) {
+    try {
+      const data = await cursorFetch<Record<string, unknown>>(path, settings)
+      const text = extractRunText(data)
+      if (text) return text
+    } catch {
+      /* try the next conversation endpoint */
+    }
+  }
+  return null
 }
 
 function sleep(ms: number): Promise<void> {

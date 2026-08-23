@@ -12,6 +12,7 @@ export interface LlmSettings {
 }
 
 export const LLM_STORAGE_KEY = 'hyrule-llm-v1'
+export const LEGACY_LLM_STORAGE_KEYS = ['sagekeep-llm-v1'] as const
 
 export const POLLINATIONS_CHAT_URL = 'https://text.pollinations.ai/openai'
 
@@ -84,12 +85,24 @@ export function normalizeLlmSettings(partial?: Partial<LlmSettings> | null): Llm
 
 export function loadLlmSettings(): LlmSettings {
   try {
-    const raw = localStorage.getItem(LLM_STORAGE_KEY)
+    const raw = localStorage.getItem(LLM_STORAGE_KEY) ?? readLegacyLlmSettings()
     if (!raw) return defaultLlmSettings()
-    return normalizeLlmSettings(JSON.parse(raw) as Partial<LlmSettings>)
+    const loaded = normalizeLlmSettings(JSON.parse(raw) as Partial<LlmSettings>)
+    if (!localStorage.getItem(LLM_STORAGE_KEY) && loaded.apiKey.trim()) {
+      saveLlmSettings(loaded)
+    }
+    return loaded
   } catch {
     return defaultLlmSettings()
   }
+}
+
+function readLegacyLlmSettings(): string | null {
+  for (const key of LEGACY_LLM_STORAGE_KEYS) {
+    const raw = localStorage.getItem(key)
+    if (raw) return raw
+  }
+  return null
 }
 
 export function saveLlmSettings(settings: LlmSettings): void {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { allLore } from '../data/corpus'
 import { buildCursorForgePrompt, buildCursorPrompt, cursorApiUrl, isCursorProvider } from './cursorAgent'
-import { normalizeLlmSettings } from './llm'
+import { normalizeLlmSettings, loadLlmSettings, LLM_STORAGE_KEY } from './llm'
 import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages } from './sage'
 import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
@@ -181,6 +181,29 @@ describe('cursor oracle', () => {
     })
     expect(groq.baseUrl).toContain('groq')
     expect(groq.apiKey).toBe('gsk_test')
+  })
+
+  it('picks up a Cursor key saved under the old Sagekeep storage slot', () => {
+    const memory = new Map<string, string>()
+    const fake = {
+      getItem: (key: string) => memory.get(key) ?? null,
+      setItem: (key: string, value: string) => {
+        memory.set(key, value)
+      },
+      removeItem: (key: string) => {
+        memory.delete(key)
+      },
+    }
+    const previous = globalThis.localStorage
+    Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: fake })
+    try {
+      memory.set('sagekeep-llm-v1', JSON.stringify({ apiKey: 'crsr_legacy_test', baseUrl: 'cursor://cloud-agent' }))
+      const loaded = loadLlmSettings()
+      expect(loaded.apiKey).toBe('crsr_legacy_test')
+      expect(memory.get(LLM_STORAGE_KEY)).toMatch(/crsr_legacy_test/)
+    } finally {
+      Object.defineProperty(globalThis, 'localStorage', { configurable: true, value: previous })
+    }
   })
 })
 
