@@ -12,6 +12,7 @@ import { forgeFromPrompt, nameFromPrompt, parseCharacterReply } from './characte
 import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
 import { CAMPAIGN, scenes } from '../data/campaign'
+import { battleMapForScene, campaignMaps } from '../data/maps'
 
 describe('search', () => {
   it('tokenizes queries and drops stopwords', () => {
@@ -104,8 +105,8 @@ describe('tactics board', () => {
     expect(diag.feet).toBe(50)
   })
 
-  it('seeds party, Kakariko NPCs, and Poes', () => {
-    const tokens = seedTokens('map-kakariko', pregens, {
+  it('seeds party, Kakariko NPCs, and Poes on the bird’s-eye board', () => {
+    const tokens = seedTokens('battle-kakariko', pregens, {
       id: 's1-poes',
       act: 1,
       title: 'Poes',
@@ -269,6 +270,16 @@ describe('one-shot briefing', () => {
       expect(scene.summary?.length).toBeGreaterThan(20)
       expect(scene.whatsHappening?.length).toBeGreaterThan(80)
       expect(scene.options?.length).toBeGreaterThanOrEqual(2)
+    }
+  })
+
+  it('gives every scene a top-down combat board separate from scenic art', () => {
+    for (const scene of scenes) {
+      const battle = battleMapForScene(scene.id)
+      expect(battle).toBeTruthy()
+      expect(battle?.src).toMatch(/battle-/)
+      const place = campaignMaps.find((m) => m.id === scene.mapId)
+      expect(place?.artSrc).not.toBe(battle?.src)
     }
   })
 })

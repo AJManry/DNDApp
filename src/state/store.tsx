@@ -12,6 +12,7 @@ import {
 } from 'react'
 import { allLore } from '../data/corpus'
 import { scenes } from '../data/campaign'
+import { battleMapForScene } from '../data/maps'
 import { rollDice } from '../lib/dice'
 import { isCursorProvider } from '../lib/cursorAgent'
 import { loadLlmSettings, saveLlmSettings, type LlmSettings } from '../lib/llm'
@@ -136,7 +137,7 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         sceneId: action.id,
-        activeMapId: next?.mapId ?? state.activeMapId,
+        activeMapId: battleMapForScene(action.id)?.id ?? next?.mapId ?? state.activeMapId,
       }
     }
     case 'toggle-scene': {

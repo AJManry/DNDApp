@@ -1,6 +1,6 @@
 import { acts, scenes } from '../data/campaign'
 import { bestiary } from '../data/bestiary'
-import { campaignMaps } from '../data/maps'
+import { battleMapForScene, campaignMaps } from '../data/maps'
 import { useHyrule } from '../state/store'
 import type { Scene, SceneOption, StatBlock } from '../types'
 import { MapBoard } from './MapBoard'
@@ -9,6 +9,7 @@ export function PlayView() {
   const { state, dispatch } = useHyrule()
   const scene = scenes.find((s) => s.id === state.sceneId) ?? scenes[0]
   const map = campaignMaps.find((m) => m.id === scene.mapId)
+  const battle = battleMapForScene(scene.id)
   const monsters = (scene.encounterIds ?? [])
     .map((id) => bestiary.find((b) => b.id === id))
     .filter((b): b is StatBlock => Boolean(b))
@@ -77,20 +78,26 @@ export function PlayView() {
           </header>
           {scene.summary ? <p className="scene-summary">{scene.summary}</p> : null}
           {map ? (
+            <figure className="scene-art">
+              <img src={map.artSrc || map.imageUrl} alt={map.title} />
+              <figcaption>Place · {map.title}</figcaption>
+            </figure>
+          ) : null}
+          {battle ? (
             <div className="scene-tactics">
               <header className="scene-tactics-head">
-                <span>Tactics · {map.title}</span>
+                <span>Combat · bird’s-eye {battle.title}</span>
                 <button
                   className="ghost"
                   onClick={() => {
-                    dispatch({ type: 'active-map', id: map.id })
+                    dispatch({ type: 'active-map', id: battle.id })
                     dispatch({ type: 'tab', tab: 'maps' })
                   }}
                 >
                   Full board
                 </button>
               </header>
-              <MapBoard mapId={map.id} src={map.artSrc || map.imageUrl} title={map.title} compact />
+              <MapBoard mapId={battle.id} src={battle.src} title={battle.title} compact />
             </div>
           ) : null}
           <blockquote className="boxed">{scene.boxedText}</blockquote>

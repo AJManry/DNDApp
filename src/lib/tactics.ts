@@ -1,5 +1,6 @@
 import { asset } from './assets'
 import { bestiary } from '../data/bestiary'
+import { isSceneBattleBoard } from '../data/maps'
 import type { Character, MapTactics, MapToken, Scene, TokenRole } from '../types'
 
 const PC_COLORS = ['#8fd4dc', '#e8943a', '#f6c56a', '#3d9b94', '#c8eef2']
@@ -49,7 +50,15 @@ export function clampPercent(n: number): number {
 
 const MAP_NPCS: Record<string, { id: string; name: string; speed: number; portrait?: string }[]> = {
   'map-hyrule': [{ id: 'impa', name: 'Impa', speed: 30, portrait: asset('art/portrait-impa.jpg') }],
+  'battle-hyrule-field': [
+    { id: 'impa', name: 'Impa', speed: 30, portrait: asset('art/portrait-impa.jpg') },
+    { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
+  ],
   'map-kakariko': [
+    { id: 'impa', name: 'Impa', speed: 30, portrait: asset('art/portrait-impa.jpg') },
+    { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
+  ],
+  'battle-kakariko': [
     { id: 'impa', name: 'Impa', speed: 30, portrait: asset('art/portrait-impa.jpg') },
     { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
   ],
@@ -57,10 +66,23 @@ const MAP_NPCS: Record<string, { id: string; name: string; speed: number; portra
     { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
     { id: 'korok', name: 'Korok elder', speed: 25 },
   ],
-  'map-forest-temple': [
+  'battle-lost-woods': [
+    { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
+    { id: 'korok', name: 'Korok elder', speed: 25 },
+  ],
+  'battle-woods-path': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'map-forest-temple': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-temple-door': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-temple-hall': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-gloom-span': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-statues': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-barracks': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'battle-armogohma': [{ id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') }],
+  'map-sacred-realm': [
+    { id: 'ganondorf', name: 'Ganondorf', speed: 30, portrait: asset('art/portrait-ganondorf.jpg') },
     { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
   ],
-  'map-sacred-realm': [
+  'battle-sacred-realm': [
     { id: 'ganondorf', name: 'Ganondorf', speed: 30, portrait: asset('art/portrait-ganondorf.jpg') },
     { id: 'navi', name: 'Navi', speed: 40, portrait: asset('art/portrait-navi.jpg') },
   ],
@@ -105,7 +127,7 @@ export function seedTokens(mapId: string, party: Character[], scene?: Scene | nu
       }),
     )
   })
-  const ids = scene?.mapId === mapId ? (scene.encounterIds ?? []) : []
+  const ids = scene?.mapId === mapId || isSceneBattleBoard(mapId, scene?.id) ? (scene.encounterIds ?? []) : []
   let foeI = 0
   for (const id of ids) {
     const monster = bestiary.find((b) => b.id === id)

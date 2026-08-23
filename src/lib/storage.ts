@@ -1,5 +1,6 @@
 import { pregens } from '../data/pregens'
 import { scenes } from '../data/campaign'
+import { battleMapForScene } from '../data/maps'
 import type { AppState } from '../types'
 
 export const STORAGE_KEY = 'hyrule-state-v1'
@@ -24,7 +25,7 @@ export function defaultState(): AppState {
     secretsRevealed: true,
     diceLog: [],
     tactics: {},
-    activeMapId: scenes[0]?.mapId ?? 'map-kakariko',
+    activeMapId: battleMapForScene(scenes[0]?.id ?? '')?.id ?? scenes[0]?.mapId ?? 'battle-kakariko',
   }
 }
 

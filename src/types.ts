@@ -57,6 +57,7 @@ export interface Scene {
   skillChecks?: SkillCheck[]
   encounterIds?: string[]
   mapId?: string
+  battleMapId?: string
   treasure?: string
   optional?: boolean
 }
