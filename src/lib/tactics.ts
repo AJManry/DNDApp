@@ -89,7 +89,9 @@ const MAP_NPCS: Record<string, { id: string; name: string; speed: number; portra
 }
 
 function encounterCount(monsterId: string): number {
-  if (monsterId === 'poe' || monsterId === 'bokoblin' || monsterId === 'deku-baba') return 3
+  if (monsterId === 'keese') return 4
+  if (monsterId === 'poe' || monsterId === 'bokoblin' || monsterId === 'deku-baba' || monsterId === 'bubble') return 3
+  if (monsterId === 'wolfos' || monsterId === 'lizalfos') return 2
   return 1
 }
 

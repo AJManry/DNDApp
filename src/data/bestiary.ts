@@ -26,6 +26,154 @@ export const bestiary: StatBlock[] = [
     ],
   },
   {
+    id: 'keese',
+    name: 'Keese',
+    cr: '1/2',
+    type: 'Tiny beast',
+    ac: 13,
+    hp: 7,
+    speed: '5 ft., fly 40 ft.',
+    stats: { str: 4, dex: 16, con: 10, int: 2, wis: 12, cha: 5 },
+    traits: [
+      'Echolocation. The Keese cannot use its blindsight while deafened.',
+      'Swarm Hunger. Advantage on attack rolls against a creature if at least one allied Keese is within 5 feet of the target and not incapacitated.',
+    ],
+    actions: [
+      {
+        name: 'Bite',
+        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 5 (1d4 + 3) piercing damage.',
+      },
+      {
+        name: 'Fire Burst (Fire Keese only, 1/day)',
+        text: 'If this Keese is a Fire Keese (one in four), it sheds dim orange light 10 ft. Its bite deals an extra 2 (1d4) fire damage, and a hit ignites a carried torch or lantern.',
+      },
+    ],
+  },
+  {
+    id: 'wolfos',
+    name: 'Wolfos',
+    cr: '2',
+    type: 'Medium beast',
+    ac: 14,
+    hp: 32,
+    speed: '40 ft.',
+    stats: { str: 15, dex: 16, con: 14, int: 6, wis: 12, cha: 8 },
+    traits: [
+      'Pack Tactics. Advantage on an attack roll against a creature if at least one allied Wolfos is within 5 feet of the target and not incapacitated.',
+      'Gold-Grass Camouflage. While motionless in tall grass, Wisdom (Perception) checks to notice it are made at disadvantage.',
+    ],
+    actions: [
+      {
+        name: 'Bite',
+        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 8 (1d8 + 4) piercing damage. If the target is a creature, it must succeed on a DC 12 Strength save or be knocked prone.',
+      },
+      {
+        name: 'Howl of the Lost (Recharge 5–6)',
+        text: 'Each enemy within 30 feet that can hear the Wolfos must succeed on a DC 12 Wisdom save or be frightened until the end of its next turn. A creature that has heard Saria’s Song tonight has advantage.',
+      },
+    ],
+  },
+  {
+    id: 'lizalfos',
+    name: 'Lizalfos',
+    cr: '2',
+    type: 'Medium humanoid (lizardfolk)',
+    ac: 15,
+    hp: 33,
+    speed: '30 ft., climb 20 ft., swim 30 ft.',
+    stats: { str: 14, dex: 16, con: 14, int: 8, wis: 12, cha: 8 },
+    traits: [
+      'Chameleon Hide. The Lizalfos can take the Hide action as a bonus action if it is next to a wall, vine, or water. Until it moves or attacks, it is lightly obscured.',
+      'Amphibious. It can breathe air and water.',
+    ],
+    actions: [
+      {
+        name: 'Multiattack',
+        text: 'The Lizalfos makes one spear attack and one tongue lash, or two spear attacks.',
+      },
+      {
+        name: 'Spear',
+        text: 'Melee or Ranged Weapon Attack: +5 to hit, reach 5 ft. or range 20/60 ft., one target. Hit: 7 (1d8 + 3) piercing damage.',
+      },
+      {
+        name: 'Tongue Lash',
+        text: 'Melee Weapon Attack: +5 to hit, reach 10 ft., one target. Hit: 5 (1d4 + 3) bludgeoning damage, and the target is pulled 5 feet closer.',
+      },
+    ],
+  },
+  {
+    id: 'wallmaster',
+    name: 'Wallmaster',
+    cr: '2',
+    type: 'Large monstrosity',
+    ac: 14,
+    hp: 45,
+    speed: '20 ft., climb 20 ft., fly 20 ft. (hover)',
+    stats: { str: 18, dex: 12, con: 16, int: 4, wis: 10, cha: 6 },
+    traits: [
+      'Ceiling Drop. While on a ceiling or hovering in gloom, the Wallmaster is lightly obscured. The first time it hits a creature from above, that hit is made with advantage.',
+      'False Appearance. While motionless against stone, it is indistinguishable from a carved hand.',
+    ],
+    actions: [
+      {
+        name: 'Crushing Grab',
+        text: 'Melee Weapon Attack: +6 to hit, reach 5 ft., one target. Hit: 11 (2d6 + 4) bludgeoning damage, and the target is grappled (escape DC 14). Until the grapple ends, the target is restrained, the Wallmaster cannot grab another creature, and it may fly with the target.',
+      },
+      {
+        name: 'Return to the Dark (Recharge 6)',
+        text: 'If it is grappling a creature, the Wallmaster vanishes into twilight with its prize. The grappled creature takes 7 (2d6) necrotic damage, is dropped on a lower gloom platform (or 10 feet down), and the Wallmaster reappears in an unoccupied space it can see within 30 feet.',
+      },
+    ],
+  },
+  {
+    id: 'bubble',
+    name: 'Bubble',
+    cr: '1',
+    type: 'Small undead',
+    ac: 13,
+    hp: 18,
+    speed: '0 ft., fly 30 ft. (hover)',
+    stats: { str: 6, dex: 16, con: 12, int: 4, wis: 10, cha: 12 },
+    traits: [
+      'Cursed Flame. A creature that hits the Bubble with a melee attack takes 3 (1d6) fire or cold damage (choose when you seed the board: two fire, one ice).',
+      'Skull Laugh. The Bubble is immune to being frightened. It is vulnerable to radiant damage.',
+    ],
+    actions: [
+      {
+        name: 'Cursed Ram',
+        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) bludgeoning plus 3 (1d6) fire or cold damage, and the target is cursed until the end of its next turn: it has disadvantage on its next attack roll (a true note ends the curse early).',
+      },
+    ],
+  },
+  {
+    id: 'stalfos',
+    name: 'Stalfos',
+    cr: '2',
+    type: 'Medium undead',
+    ac: 15,
+    hp: 38,
+    speed: '30 ft.',
+    stats: { str: 14, dex: 14, con: 14, int: 8, wis: 10, cha: 8 },
+    traits: [
+      'Parry. The Stalfos adds 2 to its AC against one melee attack that would hit it. To do so, it must see the attacker and be wielding a melee weapon.',
+      'Turn Resistance. Advantage on saves against effects that turn undead.',
+    ],
+    actions: [
+      {
+        name: 'Multiattack',
+        text: 'The Stalfos makes two rusted-sword attacks.',
+      },
+      {
+        name: 'Rusted Sword',
+        text: 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 7 (1d8 + 3) slashing damage.',
+      },
+      {
+        name: 'Shield Bash',
+        text: 'Melee Weapon Attack: +4 to hit, reach 5 ft., one target. Hit: 5 (1d4 + 3) bludgeoning damage, and the target must succeed on a DC 12 Strength save or be knocked prone.',
+      },
+    ],
+  },
+  {
     id: 'bokoblin',
     name: 'Bokoblin',
     cr: '1',

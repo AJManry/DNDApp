@@ -13,6 +13,7 @@ import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
 import { CAMPAIGN, scenes } from '../data/campaign'
 import { battleMapForScene, campaignMaps } from '../data/maps'
+import { bestiary } from '../data/bestiary'
 
 describe('search', () => {
   it('tokenizes queries and drops stopwords', () => {
@@ -125,6 +126,13 @@ describe('tactics board', () => {
   it('parses monster speed and formats range', () => {
     expect(parseSpeed('30 ft., fly 40 ft. (hover)')).toBe(30)
     expect(formatRange(35, 7, 30)).toMatch(/over speed/)
+  })
+
+  it('seeds four Keese on the mill fight board', () => {
+    const keeseScene = scenes.find((s) => s.id === 's1-keese')
+    expect(keeseScene).toBeTruthy()
+    const tokens = seedTokens('battle-kakariko', pregens, keeseScene)
+    expect(tokens.filter((t) => t.role === 'foe' && t.refId === 'keese').length).toBe(4)
   })
 })
 
@@ -298,6 +306,37 @@ describe('one-shot briefing', () => {
       expect(battle?.src).toMatch(/battle-/)
       const place = campaignMaps.find((m) => m.id === scene.mapId)
       expect(place?.artSrc).not.toBe(battle?.src)
+    }
+  })
+
+  it('puts fights on the main path, not only as optional skips', () => {
+    const combat = scenes.filter((s) => (s.encounterIds?.length ?? 0) > 0)
+    expect(combat.map((s) => s.id)).toEqual(
+      expect.arrayContaining([
+        's1-poes',
+        's1-keese',
+        's2-wolfos',
+        's2-bokoblins',
+        's3-door',
+        's3-gloom',
+        's3-shade',
+        's3-gohma',
+        's4-choir',
+        's4-ganondorf',
+      ]),
+    )
+    expect(scenes.find((s) => s.id === 's2-bokoblins')?.optional).toBeFalsy()
+    expect(CAMPAIGN.skipIfBehind.some((line) => /Keese|Mill That Bites/i.test(line))).toBe(true)
+    expect(CAMPAIGN.skipIfBehind.some((line) => /Wolfos/i.test(line))).toBe(true)
+    expect(CAMPAIGN.skipIfBehind.some((line) => /Uncaught Measures|choir/i.test(line))).toBe(true)
+  })
+
+  it('gives every combat scene a real stat block', () => {
+    const ids = new Set(bestiary.map((m) => m.id))
+    for (const scene of scenes) {
+      for (const id of scene.encounterIds ?? []) {
+        expect(ids.has(id)).toBe(true)
+      }
     }
   })
 })
