@@ -11,6 +11,7 @@ import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
 import { forgeFromPrompt, nameFromPrompt, parseCharacterReply } from './characterForge'
 import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
+import { CAMPAIGN, scenes } from '../data/campaign'
 
 describe('search', () => {
   it('tokenizes queries and drops stopwords', () => {
@@ -250,5 +251,24 @@ describe('player handouts', () => {
     expect(missile?.hitRoll).toBe('auto-hit')
     expect(missile?.damageRoll).toBe('1d4+1')
     expect(sheet.attacks.some((a) => a.name === 'Shatter')).toBe(true)
+  })
+})
+
+describe('one-shot briefing', () => {
+  it('gives Home a full story and keeps vine-door text for the Oracle', () => {
+    expect(CAMPAIGN.story.length).toBeGreaterThanOrEqual(3)
+    expect(CAMPAIGN.howToRun.length).toBeGreaterThan(0)
+    const door = scenes.find((s) => s.id === 's3-door')
+    expect(door?.boxedText).toMatch(/vine/i)
+    expect(door?.options?.length).toBeGreaterThanOrEqual(3)
+    expect(door?.whatsHappening).toMatch(/true note/i)
+  })
+
+  it('gives every scene a summary and at least two ways through', () => {
+    for (const scene of scenes) {
+      expect(scene.summary?.length).toBeGreaterThan(20)
+      expect(scene.whatsHappening?.length).toBeGreaterThan(80)
+      expect(scene.options?.length).toBeGreaterThanOrEqual(2)
+    }
   })
 })

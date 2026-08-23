@@ -1,8 +1,8 @@
-import { acts, CAMPAIGN, scenes, virtueRules } from '../data/campaign'
+import { acts, scenes } from '../data/campaign'
 import { bestiary } from '../data/bestiary'
 import { campaignMaps } from '../data/maps'
 import { useHyrule } from '../state/store'
-import type { Scene, StatBlock } from '../types'
+import type { Scene, SceneOption, StatBlock } from '../types'
 import { MapBoard } from './MapBoard'
 
 export function PlayView() {
@@ -17,11 +17,12 @@ export function PlayView() {
   return (
     <div className="play">
       <div className="play-col">
-        <div className="module-head">
-          <p className="kicker">{CAMPAIGN.subtitle}</p>
-          <h1>{CAMPAIGN.title}</h1>
-          <p className="lede">{CAMPAIGN.premise}</p>
-          <p className="fineprint">{CAMPAIGN.inspiration}</p>
+        <div className="play-col-head">
+          <p className="kicker">The table</p>
+          <h1>Run the scene</h1>
+          <button type="button" className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'home' })}>
+            One-shot briefing
+          </button>
         </div>
         <ol className="scene-list">
           {acts.map((act) => (
@@ -74,6 +75,7 @@ export function PlayView() {
               Beat {scene.minuteStart}–{scene.minuteEnd} min
             </span>
           </header>
+          {scene.summary ? <p className="scene-summary">{scene.summary}</p> : null}
           {map ? (
             <div className="scene-tactics">
               <header className="scene-tactics-head">
@@ -92,6 +94,22 @@ export function PlayView() {
             </div>
           ) : null}
           <blockquote className="boxed">{scene.boxedText}</blockquote>
+          {scene.whatsHappening ? (
+            <div className="whats-happening">
+              <h3>What’s happening</h3>
+              {scene.whatsHappening.split('\n').map((p) => (
+                <p key={p.slice(0, 48)}>{p}</p>
+              ))}
+            </div>
+          ) : null}
+          {scene.options?.length ? (
+            <div className="scene-options">
+              <h3>Ways through</h3>
+              {scene.options.map((opt) => (
+                <OptionCard key={opt.name} option={opt} />
+              ))}
+            </div>
+          ) : null}
           {state.secretsRevealed ? (
             <div className="dm-notes">
               <h3>DM notes</h3>
@@ -103,7 +121,7 @@ export function PlayView() {
               ) : null}
             </div>
           ) : null}
-          {scene.skillChecks?.length ? (
+          {scene.skillChecks?.length && !scene.options?.length ? (
             <ul className="checks">
               {scene.skillChecks.map((c) => (
                 <li key={c.name}>
@@ -187,17 +205,45 @@ function DiceTray() {
 }
 
 function RulesStrip() {
+  const { dispatch } = useHyrule()
   return (
     <div className="dock-card">
-      <h3>Table rules</h3>
-      <ul className="rule-list">
-        {virtueRules.map((r) => (
-          <li key={r.name}>
-            <strong>{r.name}.</strong> {r.text}
-          </li>
-        ))}
-      </ul>
+      <h3>Briefing</h3>
+      <p className="hint">Story, skip list, ocarina, Triforce, and the Clock live on Home so this page can stay on the scene.</p>
+      <button type="button" className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'home' })}>
+        Open one-shot briefing
+      </button>
     </div>
+  )
+}
+
+function OptionCard({ option }: { option: SceneOption }) {
+  return (
+    <article className="option-card">
+      <header>
+        <h4>{option.name}</h4>
+        {option.dc != null && option.dc > 0 ? (
+          <span>
+            DC {option.dc}
+            {option.ability ? ` · ${option.ability}` : ''}
+          </span>
+        ) : option.ability ? (
+          <span>{option.ability}</span>
+        ) : null}
+      </header>
+      <p>{option.text}</p>
+      {option.success ? (
+        <p>
+          <strong>If it works.</strong> {option.success}
+        </p>
+      ) : null}
+      {option.failure ? (
+        <p>
+          <strong>If it fails.</strong> {option.failure}
+        </p>
+      ) : null}
+      {option.clock ? <p className="clock-note">{option.clock}</p> : null}
+    </article>
   )
 }
 

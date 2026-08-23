@@ -63,7 +63,7 @@ export function MapsView() {
           <figcaption>Cartographer’s ink (offline schematic of this place)</figcaption>
         </figure>
       </div>
-      <h2>The Song of Time</h2>
+      <h2>Campaign maps</h2>
       <div className="gallery">
         {campaignMaps.map((m) => (
           <button

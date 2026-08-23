@@ -1,4 +1,4 @@
-export type TabId = 'play' | 'oracle' | 'maps' | 'party' | 'handouts' | 'journal'
+export type TabId = 'home' | 'play' | 'oracle' | 'maps' | 'party' | 'handouts' | 'journal'
 
 export type LoreKind =
   | 'location'
@@ -32,6 +32,16 @@ export interface SkillCheck {
   failure: string
 }
 
+export interface SceneOption {
+  name: string
+  text: string
+  dc?: number
+  ability?: string
+  success?: string
+  failure?: string
+  clock?: string
+}
+
 export interface Scene {
   id: string
   act: 1 | 2 | 3 | 4 | 5
@@ -40,6 +50,10 @@ export interface Scene {
   minuteEnd: number
   boxedText: string
   dmNotes: string
+  summary?: string
+  whatsHappening?: string
+  options?: SceneOption[]
+  npcs?: string[]
   skillChecks?: SkillCheck[]
   encounterIds?: string[]
   mapId?: string

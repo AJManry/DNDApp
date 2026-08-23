@@ -15,8 +15,16 @@ function sceneToLore(scene: (typeof scenes)[number]): LoreEntry {
       ...(scene.optional ? ['optional'] : []),
       ...(scene.encounterIds ?? []),
     ],
-    summary: `${scene.minuteStart}–${scene.minuteEnd} min. ${scene.boxedText.slice(0, 140)}…`,
-    body: `${scene.boxedText}\n\nDM: ${scene.dmNotes}${scene.treasure ? `\n\nTreasure: ${scene.treasure}` : ''}`,
+    summary: `${scene.minuteStart}–${scene.minuteEnd} min. ${scene.summary ?? scene.boxedText.slice(0, 140)}`,
+    body: [
+      scene.boxedText,
+      scene.whatsHappening ? `\n\nWhat’s happening:\n${scene.whatsHappening}` : '',
+      `\n\nDM: ${scene.dmNotes}`,
+      scene.options?.length
+        ? `\n\nOptions:\n${scene.options.map((o) => `${o.name}: ${o.text}${o.success ? ` Success: ${o.success}` : ''}${o.failure ? ` Failure: ${o.failure}` : ''}`).join('\n')}`
+        : '',
+      scene.treasure ? `\n\nTreasure: ${scene.treasure}` : '',
+    ].join(''),
     secrets: scene.dmNotes,
     relatedIds: scene.encounterIds,
     image: campaignMaps.find((m) => m.id === scene.mapId)?.artSrc,

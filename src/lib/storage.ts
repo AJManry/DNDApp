@@ -6,7 +6,7 @@ export const STORAGE_KEY = 'hyrule-state-v1'
 
 export function defaultState(): AppState {
   return {
-    tab: 'play',
+    tab: 'home',
     oracleQuery: '',
     oracleThread: [],
     oracleBusy: false,

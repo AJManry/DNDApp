@@ -1,4 +1,4 @@
-import { CAMPAIGN, scenes } from '../data/campaign'
+import { scenes } from '../data/campaign'
 import { useHyrule } from '../state/store'
 
 export function JournalView() {
@@ -66,7 +66,6 @@ export function JournalView() {
           from any machine — no download. Enable it under Settings → Pages → Deploy from branch
           <code> gh-pages</code>. Party HP and invented lore are saved in that browser’s localStorage.
         </p>
-        <p className="fineprint">{CAMPAIGN.inspiration}</p>
       </aside>
     </div>
   )

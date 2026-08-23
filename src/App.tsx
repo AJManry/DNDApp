@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { HomeView } from './views/HomeView'
 import { HandoutsView } from './views/HandoutsView'
 import { JournalView } from './views/JournalView'
 import { MapsView } from './views/MapsView'
@@ -10,7 +11,8 @@ import { asset } from './lib/assets'
 import type { TabId } from './types'
 
 const TABS: { id: TabId; label: string; hint: string }[] = [
-  { id: 'play', label: 'Table', hint: 'Run the one-shot' },
+  { id: 'home', label: 'Home', hint: 'One-shot briefing' },
+  { id: 'play', label: 'Table', hint: 'Run the scene' },
   { id: 'oracle', label: 'Oracle', hint: 'Ask the world' },
   { id: 'maps', label: 'Maps', hint: 'Tokens & range' },
   { id: 'party', label: 'Party', hint: 'Forge a hero' },
@@ -39,7 +41,18 @@ function Shell() {
   return (
     <div className="app">
       <aside className="rail">
-        <div className="brand">
+        <div
+          className="brand"
+          role="button"
+          tabIndex={0}
+          onClick={() => dispatch({ type: 'tab', tab: 'home' })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault()
+              dispatch({ type: 'tab', tab: 'home' })
+            }
+          }}
+        >
           <img src={asset('art/hyrule-emblem.jpg')} alt="" className="emblem" />
           <div>
             <div className="brand-name">Hyrule</div>
@@ -104,6 +117,7 @@ function Shell() {
           </label>
         </header>
         <section className="panel">
+          {state.tab === 'home' && <HomeView />}
           {state.tab === 'play' && <PlayView />}
           {state.tab === 'oracle' && <OracleView />}
           {state.tab === 'maps' && <MapsView />}
