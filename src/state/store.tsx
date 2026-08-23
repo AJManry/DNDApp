@@ -66,6 +66,15 @@ type Action =
   | { type: 'reset' }
 
 function reducer(state: AppState, action: Action): AppState {
+  try {
+    return reduce(state, action)
+  } catch (err) {
+    console.error('Hyrule reducer failed', action.type, err)
+    return state
+  }
+}
+
+function reduce(state: AppState, action: Action): AppState {
   switch (action.type) {
     case 'hydrate':
       return action.state
@@ -167,12 +176,14 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         party: state.party.map((c) => (c.id === action.id ? { ...c, ...action.patch } : c)),
       }
-    case 'add-character':
+    case 'add-character': {
+      const character = normalizeCharacter(action.character)
       return {
         ...state,
-        party: [...state.party, normalizeCharacter(action.character)],
-        selectedCharacterId: action.character.id,
+        party: [...state.party, character],
+        selectedCharacterId: character.id,
       }
+    }
     case 'remove-character':
       return {
         ...state,
@@ -312,7 +323,11 @@ export function HyruleProvider({ children }: { children: ReactNode }) {
   const [llmSettings, setLlmSettingsState] = useState(loadLlmSettings)
 
   useEffect(() => {
-    saveState(state)
+    try {
+      saveState(state)
+    } catch (err) {
+      console.warn('Could not persist Hyrule state', err)
+    }
   }, [state])
 
   useEffect(() => {

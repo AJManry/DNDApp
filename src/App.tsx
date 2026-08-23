@@ -6,6 +6,7 @@ import { MapsView } from './views/MapsView'
 import { OracleView } from './views/OracleView'
 import { PartyView } from './views/PartyView'
 import { PlayView } from './views/PlayView'
+import { ErrorBoundary } from './views/ErrorBoundary'
 import { HyruleProvider, useHyrule } from './state/store'
 import { asset } from './lib/assets'
 import type { TabId } from './types'
@@ -121,8 +122,16 @@ function Shell() {
           {state.tab === 'play' && <PlayView />}
           {state.tab === 'oracle' && <OracleView />}
           {state.tab === 'maps' && <MapsView />}
-          {state.tab === 'party' && <PartyView />}
-          {state.tab === 'handouts' && <HandoutsView />}
+          {state.tab === 'party' && (
+            <ErrorBoundary title="Character forge hit a sour note">
+              <PartyView />
+            </ErrorBoundary>
+          )}
+          {state.tab === 'handouts' && (
+            <ErrorBoundary title="Handouts hit a sour note">
+              <HandoutsView />
+            </ErrorBoundary>
+          )}
           {state.tab === 'journal' && <JournalView />}
         </section>
       </main>
@@ -140,8 +149,10 @@ function formatElapsed(ms: number): string {
 
 export default function App() {
   return (
-    <HyruleProvider>
-      <Shell />
-    </HyruleProvider>
+    <ErrorBoundary>
+      <HyruleProvider>
+        <Shell />
+      </HyruleProvider>
+    </ErrorBoundary>
   )
 }

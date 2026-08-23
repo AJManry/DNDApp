@@ -47,12 +47,16 @@ export function loadState(): AppState {
 }
 
 export function saveState(state: AppState): void {
-  localStorage.setItem(
-    STORAGE_KEY,
-    JSON.stringify({
-      ...state,
-      oracleBusy: false,
-      oracleThread: state.oracleThread.filter((m) => !m.pending),
-    }),
-  )
+  try {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        ...state,
+        oracleBusy: false,
+        oracleThread: state.oracleThread.filter((m) => !m.pending),
+      }),
+    )
+  } catch (err) {
+    console.warn('Could not persist Hyrule state', err)
+  }
 }

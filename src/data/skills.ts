@@ -22,15 +22,19 @@ export const ALL_SKILLS: SkillScore[] = [
 ]
 
 export function abilityMod(score: number): number {
-  return Math.floor((score - 10) / 2)
+  const n = Number(score)
+  if (!Number.isFinite(n)) return 0
+  return Math.floor((n - 10) / 2)
 }
 
 export function skillBonus(
   skill: SkillScore,
-  abilities: Record<SkillScore['ability'], number>,
+  abilities: Record<SkillScore['ability'], number> | undefined,
   proficiency = 2,
 ): number {
-  return abilityMod(abilities[skill.ability]) + (skill.proficient ? proficiency : 0)
+  const key = skill?.ability
+  const score = abilities && key ? abilities[key] : 10
+  return abilityMod(score) + (skill?.proficient ? proficiency : 0)
 }
 
 export function formatMod(n: number): string {

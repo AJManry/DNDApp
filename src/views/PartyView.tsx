@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { generateCharacterFromPrompt, assembleCharacter } from '../lib/characterForge'
+import { normalizeCharacter } from '../lib/combatKit'
 import { CURSOR_DASHBOARD_KEYS } from '../lib/cursorAgent'
 import { useHyrule } from '../state/store'
 import type { Character, CombatMove, InventoryItem } from '../types'
@@ -28,14 +29,13 @@ export function PartyView() {
     if (!q || busy) return
     if (!hasCursorKey) {
       setStatus('Paste a Cursor API key in Oracle → Model settings. Forge uses your Cursor Cloud Agent only.')
-      dispatch({ type: 'tab', tab: 'oracle' })
       return
     }
     setBusy(true)
     setStatus('Cursor is forging a 3rd-level sheet. This can take a minute…')
     setPrompt(q)
     try {
-      const hero = await generateCharacterFromPrompt(q)
+      const hero = normalizeCharacter(await generateCharacterFromPrompt(q))
       dispatch({ type: 'add-character', character: hero })
       setStatus(`Created ${hero.name}, ${hero.ancestry} ${hero.className}.`)
     } catch (err) {
@@ -82,7 +82,7 @@ export function PartyView() {
               type="button"
               className="ghost"
               disabled={busy}
-              onClick={() => dispatch({ type: 'add-character', character: blankHero() })}
+              onClick={() => dispatch({ type: 'add-character', character: normalizeCharacter(blankHero()) })}
             >
               Blank sheet
             </button>
@@ -101,41 +101,48 @@ export function PartyView() {
         </div>
       </section>
       <div className="party-grid">
-        {state.party.map((c) => (
+        {state.party.map((c) => {
+          const card = normalizeCharacter(c)
+          return (
           <button
-            key={c.id}
-            className={c.id === selected?.id ? 'pc-card active' : 'pc-card'}
-            onClick={() => dispatch({ type: 'select-character', id: c.id })}
+            key={card.id}
+            className={card.id === selected?.id ? 'pc-card active' : 'pc-card'}
+            onClick={() => dispatch({ type: 'select-character', id: card.id })}
           >
             <header>
-              <strong>{c.name}</strong>
-              <span>{c.virtue ?? '—'}</span>
+              <strong>{card.name}</strong>
+              <span>{card.virtue ?? '—'}</span>
             </header>
-            {c.portrait ? <img className="pc-portrait" src={c.portrait} alt="" /> : null}
+            {card.portrait ? <img className="pc-portrait" src={card.portrait} alt="" /> : null}
             <p>
-              {c.ancestry} {c.className}
+              {card.ancestry} {card.className}
             </p>
-            <HpBar hp={c.hp} />
+            <HpBar hp={card.hp} />
             <div className="mini-stats">
-              <span>AC {c.ac}</span>
-              <span>Spd {c.speed}</span>
-              <span>{c.inspiration ? 'Inspired' : '—'}</span>
+              <span>AC {card.ac}</span>
+              <span>Spd {card.speed}</span>
+              <span>{card.inspiration ? 'Inspired' : '—'}</span>
             </div>
           </button>
-        ))}
+          )
+        })}
       </div>
-      {selected ? <Sheet character={selected} /> : null}
+      {selected ? <Sheet character={normalizeCharacter(selected)} /> : null}
     </div>
   )
 }
 
-function HpBar({ hp }: { hp: { current: number; max: number } }) {
-  const pct = hp.max <= 0 ? 0 : Math.max(0, Math.min(100, (hp.current / hp.max) * 100))
+function HpBar({ hp }: { hp?: { current?: number; max?: number } | null }) {
+  const max = Number(hp?.max)
+  const current = Number(hp?.current)
+  const safeMax = Number.isFinite(max) && max > 0 ? max : 1
+  const safeCurrent = Number.isFinite(current) ? current : 0
+  const pct = Math.max(0, Math.min(100, (safeCurrent / safeMax) * 100))
   return (
     <div className="hp">
       <div className="hp-fill" style={{ width: `${pct}%` }} />
       <span>
-        {hp.current}/{hp.max} hp
+        {safeCurrent}/{Number.isFinite(max) ? max : 0} hp
       </span>
     </div>
   )
@@ -145,27 +152,28 @@ function Sheet({ character }: { character: Character }) {
   const { dispatch } = useHyrule()
   const [itemName, setItemName] = useState('')
   const prof = 2
-  const patch = (p: Partial<Character>) => dispatch({ type: 'patch-character', id: character.id, patch: p })
+  const sheet = normalizeCharacter(character)
+  const patch = (p: Partial<Character>) => dispatch({ type: 'patch-character', id: sheet.id, patch: p })
 
   return (
     <div className="sheet">
       <div className="sheet-top">
         <label>
           Name
-          <input value={character.name} onChange={(e) => patch({ name: e.target.value })} />
+          <input value={str(sheet.name)} onChange={(e) => patch({ name: e.target.value })} />
         </label>
         <label>
           Ancestry
-          <input value={character.ancestry} onChange={(e) => patch({ ancestry: e.target.value })} />
+          <input value={str(sheet.ancestry)} onChange={(e) => patch({ ancestry: e.target.value })} />
         </label>
         <label>
           Class
-          <input value={character.className} onChange={(e) => patch({ className: e.target.value })} />
+          <input value={str(sheet.className)} onChange={(e) => patch({ className: e.target.value })} />
         </label>
         <label>
           Virtue
           <select
-            value={character.virtue ?? ''}
+            value={sheet.virtue ?? ''}
             onChange={(e) =>
               patch({ virtue: (e.target.value || undefined) as Character['virtue'] })
             }
@@ -178,13 +186,13 @@ function Sheet({ character }: { character: Character }) {
         </label>
       </div>
       <div className="hp-edit">
-        <button onClick={() => patch({ hp: { ...character.hp, current: Math.max(0, character.hp.current - 1) } })}>
+        <button onClick={() => patch({ hp: { ...sheet.hp, current: Math.max(0, sheet.hp.current - 1) } })}>
           −
         </button>
-        <HpBar hp={character.hp} />
+        <HpBar hp={sheet.hp} />
         <button
           onClick={() =>
-            patch({ hp: { ...character.hp, current: Math.min(character.hp.max, character.hp.current + 1) } })
+            patch({ hp: { ...sheet.hp, current: Math.min(sheet.hp.max, sheet.hp.current + 1) } })
           }
         >
           +
@@ -193,10 +201,10 @@ function Sheet({ character }: { character: Character }) {
           Max
           <input
             type="number"
-            value={character.hp.max}
+            value={sheet.hp.max}
             onChange={(e) => {
               const max = Number(e.target.value) || 0
-              patch({ hp: { max, current: Math.min(character.hp.current, max) } })
+              patch({ hp: { max, current: Math.min(sheet.hp.current, max) } })
             }}
           />
         </label>
@@ -204,14 +212,14 @@ function Sheet({ character }: { character: Character }) {
           AC
           <input
             type="number"
-            value={character.ac}
+            value={sheet.ac}
             onChange={(e) => patch({ ac: Number(e.target.value) || 0 })}
           />
         </label>
         <label className="check">
           <input
             type="checkbox"
-            checked={character.inspiration}
+            checked={Boolean(sheet.inspiration)}
             onChange={(e) => patch({ inspiration: e.target.checked })}
           />
           Inspiration
@@ -223,14 +231,14 @@ function Sheet({ character }: { character: Character }) {
             {ab.toUpperCase()}
             <input
               type="number"
-              value={character.abilities[ab]}
+              value={sheet.abilities[ab]}
               onChange={(e) =>
                 patch({
-                  abilities: { ...character.abilities, [ab]: Number(e.target.value) || 0 },
+                  abilities: { ...sheet.abilities, [ab]: Number(e.target.value) || 0 },
                 })
               }
             />
-            <span>{formatMod(abilityMod(character.abilities[ab]))}</span>
+            <span>{formatMod(abilityMod(sheet.abilities[ab]))}</span>
           </label>
         ))}
       </div>
@@ -238,13 +246,13 @@ function Sheet({ character }: { character: Character }) {
         <MoveEditor
           title="Attacks"
           hint="Two weapons or strikes. Hit dice versus AC, then damage."
-          moves={character.attacks ?? []}
+          moves={sheet.attacks}
           onChange={(attacks) => patch({ attacks })}
         />
         <MoveEditor
           title="Spells"
           hint="Two spells even for martial heroes — Zelda gifts, smites, or slots."
-          moves={character.spells ?? []}
+          moves={sheet.spells}
           onChange={(spells) => patch({ spells })}
         />
       </div>
@@ -252,15 +260,15 @@ function Sheet({ character }: { character: Character }) {
         <section>
           <h3>Skills</h3>
           <ul className="skills">
-            {(character.skills ?? []).map((sk) => (
+            {sheet.skills.map((sk) => (
               <li key={sk.name}>
                 <label>
                   <input
                     type="checkbox"
-                    checked={sk.proficient}
+                    checked={Boolean(sk.proficient)}
                     onChange={(e) =>
                       patch({
-                        skills: character.skills.map((s) =>
+                        skills: sheet.skills.map((s) =>
                           s.name === sk.name ? { ...s, proficient: e.target.checked } : s,
                         ),
                       })
@@ -268,7 +276,7 @@ function Sheet({ character }: { character: Character }) {
                   />
                   {sk.name}
                 </label>
-                <strong>{formatMod(skillBonus(sk, character.abilities, prof))}</strong>
+                <strong>{formatMod(skillBonus(sk, sheet.abilities, prof))}</strong>
               </li>
             ))}
           </ul>
@@ -276,14 +284,14 @@ function Sheet({ character }: { character: Character }) {
         <section>
           <h3>Inventory</h3>
           <ul className="inventory">
-            {(character.inventory ?? []).map((it) => (
+            {sheet.inventory.map((it) => (
               <li key={it.id}>
                 <input
-                  value={it.name}
+                  value={str(it.name)}
                   onChange={(e) =>
                     dispatch({
                       type: 'patch-item',
-                      characterId: character.id,
+                      characterId: sheet.id,
                       itemId: it.id,
                       patch: { name: e.target.value },
                     })
@@ -296,7 +304,7 @@ function Sheet({ character }: { character: Character }) {
                   onChange={(e) =>
                     dispatch({
                       type: 'patch-item',
-                      characterId: character.id,
+                      characterId: sheet.id,
                       itemId: it.id,
                       patch: { qty: Number(e.target.value) || 0 },
                     })
@@ -307,7 +315,7 @@ function Sheet({ character }: { character: Character }) {
                   onChange={(e) =>
                     dispatch({
                       type: 'patch-item',
-                      characterId: character.id,
+                      characterId: sheet.id,
                       itemId: it.id,
                       patch: { rarity: e.target.value as InventoryItem['rarity'] },
                     })
@@ -322,18 +330,18 @@ function Sheet({ character }: { character: Character }) {
                 <button
                   className="ghost"
                   onClick={() =>
-                    dispatch({ type: 'remove-item', characterId: character.id, itemId: it.id })
+                    dispatch({ type: 'remove-item', characterId: sheet.id, itemId: it.id })
                   }
                 >
                   ×
                 </button>
                 <textarea
-                  value={it.notes}
+                  value={str(it.notes)}
                   placeholder="Notes"
                   onChange={(e) =>
                     dispatch({
                       type: 'patch-item',
-                      characterId: character.id,
+                      characterId: sheet.id,
                       itemId: it.id,
                       patch: { notes: e.target.value },
                     })
@@ -349,7 +357,7 @@ function Sheet({ character }: { character: Character }) {
               if (!itemName.trim()) return
               dispatch({
                 type: 'add-item',
-                characterId: character.id,
+                characterId: sheet.id,
                 item: {
                   id: `it-${Date.now()}`,
                   name: itemName.trim(),
@@ -367,7 +375,7 @@ function Sheet({ character }: { character: Character }) {
           <h3>Conditions</h3>
           <div className="chips">
             {CONDITIONS.map((c) => {
-              const on = (character.conditions ?? []).includes(c)
+              const on = sheet.conditions.includes(c)
               return (
                 <button
                   key={c}
@@ -375,8 +383,8 @@ function Sheet({ character }: { character: Character }) {
                   onClick={() =>
                     patch({
                       conditions: on
-                        ? (character.conditions ?? []).filter((x) => x !== c)
-                        : [...(character.conditions ?? []), c],
+                        ? sheet.conditions.filter((x) => x !== c)
+                        : [...sheet.conditions, c],
                     })
                   }
                 >
@@ -387,26 +395,26 @@ function Sheet({ character }: { character: Character }) {
           </div>
           <h3>Death saves</h3>
           <div className="death">
-            <span>Success {character.deathSaves.success}/3</span>
+            <span>Success {sheet.deathSaves.success}/3</span>
             <button
               onClick={() =>
                 patch({
                   deathSaves: {
-                    ...character.deathSaves,
-                    success: Math.min(3, character.deathSaves.success + 1),
+                    ...sheet.deathSaves,
+                    success: Math.min(3, sheet.deathSaves.success + 1),
                   },
                 })
               }
             >
               +S
             </button>
-            <span>Fail {character.deathSaves.fail}/3</span>
+            <span>Fail {sheet.deathSaves.fail}/3</span>
             <button
               onClick={() =>
                 patch({
                   deathSaves: {
-                    ...character.deathSaves,
-                    fail: Math.min(3, character.deathSaves.fail + 1),
+                    ...sheet.deathSaves,
+                    fail: Math.min(3, sheet.deathSaves.fail + 1),
                   },
                 })
               }
@@ -417,18 +425,24 @@ function Sheet({ character }: { character: Character }) {
           </div>
           <label className="notes">
             Character notes
-            <textarea value={character.notes} onChange={(e) => patch({ notes: e.target.value })} />
+            <textarea value={str(sheet.notes)} onChange={(e) => patch({ notes: e.target.value })} />
           </label>
           <button className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'handouts' })}>
             Print this party’s dice sheets
           </button>
-          <button className="danger" onClick={() => dispatch({ type: 'remove-character', id: character.id })}>
+          <button className="danger" onClick={() => dispatch({ type: 'remove-character', id: sheet.id })}>
             Remove from party
           </button>
         </section>
       </div>
     </div>
   )
+}
+
+function str(value: unknown, fallback = ''): string {
+  if (typeof value === 'string') return value
+  if (value == null) return fallback
+  return String(value)
 }
 
 function MoveEditor({
@@ -442,12 +456,13 @@ function MoveEditor({
   moves: CombatMove[]
   onChange: (next: CombatMove[]) => void
 }) {
+  const list = Array.isArray(moves) ? moves : []
   function patchMove(id: string, patch: Partial<CombatMove>) {
-    onChange(moves.map((m) => (m.id === id ? { ...m, ...patch } : m)))
+    onChange(list.map((m) => (m.id === id ? { ...m, ...patch } : m)))
   }
   function addMove() {
     onChange([
-      ...moves,
+      ...list,
       {
         id: `${title.slice(0, 3).toLowerCase()}-${Date.now().toString(36)}`,
         name: title === 'Spells' ? 'New spell' : 'New attack',
@@ -463,27 +478,27 @@ function MoveEditor({
       <h3>{title}</h3>
       <p className="hint">{hint}</p>
       <ul className="combat-moves">
-        {moves.map((m) => (
+        {list.map((m) => (
           <li key={m.id} className="combat-move">
             <label>
               Name
-              <input value={m.name} onChange={(e) => patchMove(m.id, { name: e.target.value })} />
+              <input value={str(m.name)} onChange={(e) => patchMove(m.id, { name: e.target.value })} />
             </label>
             <label>
               Hit / save
-              <input value={m.hit} onChange={(e) => patchMove(m.id, { hit: e.target.value })} />
+              <input value={str(m.hit)} onChange={(e) => patchMove(m.id, { hit: e.target.value })} />
             </label>
             <label>
               Damage
-              <input value={m.damage} onChange={(e) => patchMove(m.id, { damage: e.target.value })} />
+              <input value={str(m.damage)} onChange={(e) => patchMove(m.id, { damage: e.target.value })} />
             </label>
             <label>
               Range
-              <input value={m.range} onChange={(e) => patchMove(m.id, { range: e.target.value })} />
+              <input value={str(m.range)} onChange={(e) => patchMove(m.id, { range: e.target.value })} />
             </label>
             <label className="notes">
               How to roll
-              <textarea value={m.notes} onChange={(e) => patchMove(m.id, { notes: e.target.value })} />
+              <textarea value={str(m.notes)} onChange={(e) => patchMove(m.id, { notes: e.target.value })} />
             </label>
           </li>
         ))}

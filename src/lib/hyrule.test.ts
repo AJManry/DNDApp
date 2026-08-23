@@ -9,6 +9,7 @@ import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
 import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
 import { forgeFromPrompt, nameFromPrompt, parseCharacterReply, assembleCharacter } from './characterForge'
+import { normalizeCharacter } from './combatKit'
 import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
 import { CAMPAIGN, scenes } from '../data/campaign'
@@ -209,7 +210,7 @@ describe('character forge', () => {
     expect(hero.spells).toHaveLength(2)
     expect(hero.attacks[0]?.hit).toMatch(/d20/)
     expect(hero.spells.some((s) => /Nayru|Spin/i.test(s.name))).toBe(true)
-    expect(hero.portrait).toMatch(/pollinations/)
+    expect(hero.portrait).toBeUndefined()
   })
 
   it('extracts a given name', () => {
@@ -259,6 +260,43 @@ describe('character forge', () => {
     expect(hero.className).toMatch(/Ranger/)
     expect(hero.attacks).toHaveLength(2)
     expect(hero.spells).toHaveLength(2)
+  })
+
+  it('does not throw on garbage Cursor sheet shapes', () => {
+    const junk = {
+      id: 'pc-x',
+      name: 'Broken',
+      className: 3,
+      hp: 24,
+      skills: ['Stealth'],
+      attacks: { name: 'Sword', hit: 'd20+5', damage: '1d8' },
+      notes: { bio: 'secret' },
+    }
+    expect(() => normalizeCharacter(junk as never)).not.toThrow()
+    const hero = normalizeCharacter(junk as never)
+    expect(hero.attacks).toHaveLength(2)
+    expect(hero.spells).toHaveLength(2)
+    expect(hero.skills.every((s) => typeof s.name === 'string')).toBe(true)
+    expect(typeof hero.notes).toBe('string')
+    expect(hero.hp.max).toBeGreaterThan(0)
+    expect(typeof hero.hp.current).toBe('number')
+  })
+
+  it('stringifies inventory notes that arrive as objects', () => {
+    const hero = assembleCharacter({
+      name: 'Tarin',
+      inventory: [{ name: 'Stick', notes: { dmg: '1d6' } as unknown as string }],
+    })
+    expect(typeof hero.inventory[0]?.notes).toBe('string')
+    expect(hero.attacks).toHaveLength(2)
+  })
+
+  it('parses attacks sent as a single object instead of an array', () => {
+    const draft = parseCharacterReply(
+      '{"name":"Aveil","ancestry":"Gerudo","attacks":{"name":"Scimitar","hit":"d20+5","damage":"1d6+3 slashing","range":"5 ft"}}',
+    )
+    expect(draft?.name).toBe('Aveil')
+    expect(draft?.attacks?.[0]?.name).toBe('Scimitar')
   })
 })
 

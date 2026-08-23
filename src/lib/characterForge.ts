@@ -1,6 +1,6 @@
 import type { Character, InventoryItem, SkillScore } from '../types'
 import { ALL_SKILLS } from '../data/skills'
-import { ensureCombatKit, type CombatMoveDraft } from './combatKit'
+import { ensureCombatKit, normalizeCharacter as normalizeFromKit, type CombatMoveDraft } from './combatKit'
 import { CURSOR_SCHEME, runCursorForge } from './cursorAgent'
 import { loadLlmSettings } from './llm'
 
@@ -213,8 +213,9 @@ function pickName(ancestry: string, prompt: string): string {
   return bank[(h >>> 0) % bank.length]
 }
 
-function skillsFrom(proficient: string[] = []): SkillScore[] {
-  const set = new Set(proficient.map((s) => s.toLowerCase()))
+function skillsFrom(proficient: unknown): SkillScore[] {
+  const list = Array.isArray(proficient) ? proficient : []
+  const set = new Set(list.map((s) => String(s).toLowerCase()))
   return ALL_SKILLS.map((s) => ({ ...s, proficient: set.has(s.name.toLowerCase()) }))
 }
 
@@ -224,62 +225,73 @@ function clamp(n: number, min: number, max: number): number {
 }
 
 export function assembleCharacter(draft: CharacterDraft, prompt = ''): Character {
-  const abilities = {
-    str: clamp(draft.abilities?.str ?? 12, 8, 18),
-    dex: clamp(draft.abilities?.dex ?? 12, 8, 18),
-    con: clamp(draft.abilities?.con ?? 12, 8, 18),
-    int: clamp(draft.abilities?.int ?? 10, 8, 18),
-    wis: clamp(draft.abilities?.wis ?? 12, 8, 18),
-    cha: clamp(draft.abilities?.cha ?? 10, 8, 18),
+  try {
+    const abilities = {
+      str: clamp(toNumber(draft.abilities?.str, 12), 8, 18),
+      dex: clamp(toNumber(draft.abilities?.dex, 12), 8, 18),
+      con: clamp(toNumber(draft.abilities?.con, 12), 8, 18),
+      int: clamp(toNumber(draft.abilities?.int, 10), 8, 18),
+      wis: clamp(toNumber(draft.abilities?.wis, 12), 8, 18),
+      cha: clamp(toNumber(draft.abilities?.cha, 10), 8, 18),
+    }
+    const hp = clamp(toNumber(draft.hp, 22), 10, 40)
+    const inventory: InventoryItem[] = (Array.isArray(draft.inventory) ? draft.inventory : []).slice(0, 8).map((it, i) => ({
+      id: `it-${i}-${String(it?.name || 'item').slice(0, 12)}`,
+      name: String(it?.name || 'Item').slice(0, 48),
+      qty: clamp(toNumber(it?.qty, 1), 1, 99),
+      rarity: it?.rarity ?? 'common',
+      notes: String(it?.notes ?? '').slice(0, 180),
+      equipped: Boolean(it?.equipped),
+    }))
+    const kit = ensureCombatKit(String(draft.className || 'Fighter 3'), draft.attacks, draft.spells)
+    const virtue =
+      draft.virtue === 'Courage' || draft.virtue === 'Wisdom' || draft.virtue === 'Power' ? draft.virtue : 'Courage'
+    return {
+      id: `pc-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`,
+      name: String(draft.name || 'New adventurer').slice(0, 40),
+      ancestry: String(draft.ancestry || 'Hylian').slice(0, 24),
+      className: String(draft.className || 'Fighter 3').slice(0, 48),
+      level: 3,
+      hp: { current: hp, max: hp },
+      ac: clamp(toNumber(draft.ac, 14), 10, 20),
+      speed: clamp(toNumber(draft.speed, 30), 20, 40),
+      abilities,
+      skills: skillsFrom(draft.proficientSkills),
+      attacks: kit.attacks,
+      spells: kit.spells,
+      inventory,
+      conditions: [],
+      inspiration: false,
+      deathSaves: { success: 0, fail: 0 },
+      notes: String(draft.notes || prompt).slice(0, 500),
+      virtue,
+      portrait: portraitUrl(String(draft.name || 'adventurer'), String(draft.ancestry || 'Hylian'), prompt),
+    }
+  } catch {
+    return normalizeFromKit({
+      name: String(draft?.name || 'New adventurer'),
+      ancestry: String(draft?.ancestry || 'Hylian'),
+      className: String(draft?.className || 'Fighter 3'),
+      notes: String(prompt || ''),
+    })
   }
-  const hp = clamp(draft.hp ?? 22, 10, 40)
-  const inventory: InventoryItem[] = (draft.inventory ?? []).slice(0, 8).map((it, i) => ({
-    id: `it-${Date.now().toString(36)}-${i}`,
-    name: it.name.slice(0, 48),
-    qty: clamp(it.qty ?? 1, 1, 99),
-    rarity: it.rarity ?? 'common',
-    notes: (it.notes ?? '').slice(0, 180),
-    equipped: Boolean(it.equipped),
-  }))
-  const kit = ensureCombatKit(draft.className || 'Fighter 3', draft.attacks, draft.spells)
-  const virtue = draft.virtue === 'Courage' || draft.virtue === 'Wisdom' || draft.virtue === 'Power' ? draft.virtue : 'Courage'
-  const hero: Character = {
-    id: `pc-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`,
-    name: (draft.name || 'New adventurer').slice(0, 40),
-    ancestry: (draft.ancestry || 'Hylian').slice(0, 24),
-    className: (draft.className || 'Fighter 3').slice(0, 48),
-    level: 3,
-    hp: { current: hp, max: hp },
-    ac: clamp(draft.ac ?? 14, 10, 20),
-    speed: clamp(draft.speed ?? 30, 20, 40),
-    abilities,
-    skills: skillsFrom(draft.proficientSkills),
-    attacks: kit.attacks,
-    spells: kit.spells,
-    inventory,
-    conditions: [],
-    inspiration: false,
-    deathSaves: { success: 0, fail: 0 },
-    notes: (draft.notes || prompt).slice(0, 500),
-    virtue,
-    portrait: portraitUrl(draft.name || 'adventurer', draft.ancestry || 'Hylian', prompt),
-  }
-  return hero
 }
 
-export function portraitUrl(name: string, ancestry: string, prompt: string): string {
-  const text = [
-    'Oil painting portrait, Breath of the Wild and Tears of the Kingdom style,',
-    `${name}, a ${ancestry} adventurer of Hyrule,`,
-    prompt.slice(0, 140),
-    'chest-up, dusk light, no text, no watermark',
-  ].join(' ')
-  let seed = 1
-  for (let i = 0; i < text.length; i += 1) seed = (seed * 31 + text.charCodeAt(i)) % 1_000_000
-  return `https://image.pollinations.ai/prompt/${encodeURIComponent(text)}?width=640&height=640&nologo=true&seed=${seed}`
+function toNumber(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return fallback
 }
 
-export function parseCharacterReply(raw: string): CharacterDraft | null {
+export function portraitUrl(_name: string, _ancestry: string, _prompt: string): string | undefined {
+  return undefined
+}
+
+export function parseCharacterReply(raw: string, depth = 0): CharacterDraft | null {
+  if (depth > 4) return null
   const trimmed = raw.trim()
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/)
   const candidate = fenced?.[1]?.trim() ?? trimmed
@@ -290,21 +302,20 @@ export function parseCharacterReply(raw: string): CharacterDraft | null {
     const obj = JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>
     if (!obj || typeof obj !== 'object') return null
     if (typeof obj.answer === 'string' && !obj.name) {
-      return parseCharacterReply(obj.answer)
+      return parseCharacterReply(obj.answer, depth + 1)
     }
     const abilities = asRecord(obj.abilities)
-    const inventory = Array.isArray(obj.inventory) ? obj.inventory : []
-    const attacks = Array.isArray(obj.attacks) ? obj.attacks : []
-    const spells = Array.isArray(obj.spells) ? obj.spells : []
-    const skills = Array.isArray(obj.proficientSkills)
-      ? obj.proficientSkills.filter((s): s is string => typeof s === 'string')
-      : []
+    const inventory = asObjectList(obj.inventory)
+    const attacks = asObjectList(obj.attacks)
+    const spells = asObjectList(obj.spells)
+    const skills = asStringList(obj.proficientSkills ?? obj.skills)
+    const hpRecord = asRecord(obj.hp)
     return {
       name: asString(obj.name),
       ancestry: asString(obj.ancestry),
-      className: asString(obj.className),
+      className: asString(obj.className) || asString(asRecord(obj.className)?.name),
       virtue: asString(obj.virtue) as Character['virtue'],
-      hp: asNumber(obj.hp) ?? asNumber(obj.hpMax),
+      hp: asNumber(obj.hp) ?? asNumber(obj.hpMax) ?? asNumber(hpRecord?.max) ?? asNumber(hpRecord?.current),
       ac: asNumber(obj.ac),
       speed: asNumber(obj.speed),
       abilities: abilities
@@ -355,15 +366,46 @@ export function parseCharacterReply(raw: string): CharacterDraft | null {
 }
 
 function asString(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined
+  if (typeof value === 'string' && value.trim()) return value.trim()
+  if (typeof value === 'number' && Number.isFinite(value)) return String(value)
+  return undefined
 }
 
 function asNumber(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return undefined
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
-  return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
+  return value && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null
+}
+
+function asObjectList(value: unknown): Record<string, unknown>[] {
+  if (Array.isArray(value)) {
+    return value.filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === 'object')
+  }
+  if (value && typeof value === 'object') return [value as Record<string, unknown>]
+  return []
+}
+
+function asStringList(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.flatMap((s) => {
+      if (typeof s === 'string' && s.trim()) return [s.trim()]
+      if (s && typeof s === 'object' && 'name' in s && typeof (s as { name: unknown }).name === 'string') {
+        return [(s as { name: string }).name]
+      }
+      return []
+    })
+  }
+  if (typeof value === 'string' && value.trim()) {
+    return value.split(/[,;]/).map((s) => s.trim()).filter(Boolean)
+  }
+  return []
 }
 
 export async function generateCharacterFromPrompt(prompt: string): Promise<Character> {
@@ -371,10 +413,19 @@ export async function generateCharacterFromPrompt(prompt: string): Promise<Chara
   if (!q) throw new Error('Describe the adventurer before asking Cursor to forge them.')
   const saved = loadLlmSettings()
   const settings = { ...saved, baseUrl: CURSOR_SCHEME, cursorAgentId: '' }
-  const result = await runCursorForge(q, settings)
-  const draft = parseCharacterReply(result.text)
-  if (!draft?.name) {
-    throw new Error('Cursor replied, but the sheet was not valid JSON. Try the prompt again.')
+  try {
+    const result = await runCursorForge(q, settings)
+    const draft = parseCharacterReply(result.text)
+    if (draft?.name) {
+      return normalizeFromKit(assembleCharacter({ ...draft, notes: draft.notes || q }, q))
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (/api key|paste a cursor/i.test(message)) throw err
   }
-  return assembleCharacter({ ...draft, notes: draft.notes || q }, q)
+  const hero = forgeFromPrompt(q)
+  return normalizeFromKit({
+    ...hero,
+    notes: `${q} Cursor’s reply was unusable, so the Pad filled a 3rd-level kit.`,
+  })
 }

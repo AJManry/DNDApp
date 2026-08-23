@@ -1,4 +1,4 @@
-import type { Character, CombatMove } from '../types'
+import type { Character, CombatMove, InventoryItem, SkillScore } from '../types'
 import { ALL_SKILLS } from '../data/skills'
 
 export type CombatMoveDraft = Partial<CombatMove> & { name?: string }
@@ -215,7 +215,7 @@ function move(
 }
 
 export function kitForClass(className: string): { attacks: CombatMove[]; spells: CombatMove[] } {
-  const c = className.toLowerCase()
+  const c = String(className ?? '').toLowerCase()
   if (/wizard|mage|sorcerer|witch/.test(c)) return cloneKit(WIZARD_KIT)
   if (/\bbard\b|singer|harp/.test(c)) return cloneKit(BARD_KIT)
   if (/ranger|hunter|scout|archer/.test(c)) return cloneKit(RANGER_KIT)
@@ -239,7 +239,7 @@ export function normalizeMove(raw: CombatMoveDraft | undefined, prefix: string, 
   const name = String(raw.name ?? '').trim().slice(0, 48)
   if (!name) return null
   return {
-    id: String(raw.id || `${prefix}-${index}-${Math.random().toString(36).slice(2, 7)}`).slice(0, 48),
+    id: String(raw.id || `${prefix}-${index}`).slice(0, 48),
     name,
     hit: String(raw.hit || 'd20+0').trim().slice(0, 40),
     damage: String(raw.damage || '—').trim().slice(0, 80),
@@ -249,13 +249,18 @@ export function normalizeMove(raw: CombatMoveDraft | undefined, prefix: string, 
 }
 
 export function padMoves(
-  existing: CombatMoveDraft[] | undefined,
+  existing: CombatMoveDraft[] | unknown,
   fallback: CombatMove[],
   prefix: string,
 ): CombatMove[] {
+  const source = Array.isArray(existing)
+    ? existing
+    : existing && typeof existing === 'object'
+      ? [existing]
+      : []
   const list: CombatMove[] = []
-  for (const [i, raw] of (existing ?? []).entries()) {
-    const next = normalizeMove(raw, prefix, i)
+  for (const [i, raw] of source.entries()) {
+    const next = normalizeMove(raw as CombatMoveDraft, prefix, i)
     if (next) list.push(next)
   }
   for (const fb of fallback) {
@@ -282,39 +287,128 @@ export function ensureCombatKit(
   }
 }
 
-export function normalizeCharacter<T extends Partial<Character> & Pick<Character, 'id' | 'name'>>(
-  character: T,
-): Character {
-  const className = character.className || 'Fighter 3'
-  const kit = ensureCombatKit(className, character.attacks, character.spells)
-  const hpMax = character.hp?.max ?? 22
-  const hpCurrent = character.hp?.current ?? hpMax
-  return {
-    id: character.id,
-    name: character.name || 'New adventurer',
-    ancestry: character.ancestry || 'Hylian',
-    className,
-    level: character.level || 3,
-    portrait: character.portrait,
-    hp: { current: hpCurrent, max: hpMax },
-    ac: character.ac ?? 14,
-    speed: character.speed ?? 30,
-    abilities: {
-      str: character.abilities?.str ?? 12,
-      dex: character.abilities?.dex ?? 12,
-      con: character.abilities?.con ?? 12,
-      int: character.abilities?.int ?? 10,
-      wis: character.abilities?.wis ?? 12,
-      cha: character.abilities?.cha ?? 10,
-    },
-    skills: Array.isArray(character.skills) && character.skills.length ? character.skills : ALL_SKILLS.map((s) => ({ ...s })),
-    attacks: kit.attacks,
-    spells: kit.spells,
-    inventory: Array.isArray(character.inventory) ? character.inventory : [],
-    conditions: Array.isArray(character.conditions) ? character.conditions : [],
-    inspiration: Boolean(character.inspiration),
-    deathSaves: character.deathSaves ?? { success: 0, fail: 0 },
-    notes: character.notes || '',
-    virtue: character.virtue,
+export function normalizeCharacter(character: Partial<Character> & { id?: string; name?: string }): Character {
+  try {
+    const className = String(character.className || 'Fighter 3').slice(0, 48)
+    const kit = ensureCombatKit(className, character.attacks, character.spells)
+    const hpMax = num(character.hp && typeof character.hp === 'object' ? character.hp.max : character.hp, 22)
+    const hpCurrent = num(character.hp && typeof character.hp === 'object' ? character.hp.current : hpMax, hpMax)
+    return {
+      id: String(character.id || 'pc-new'),
+      name: String(character.name || 'New adventurer').slice(0, 40),
+      ancestry: String(character.ancestry || 'Hylian').slice(0, 24),
+      className,
+      level: num(character.level, 3) || 3,
+      portrait: typeof character.portrait === 'string' ? character.portrait : undefined,
+      hp: { current: hpCurrent, max: Math.max(1, hpMax) },
+      ac: num(character.ac, 14),
+      speed: num(character.speed, 30),
+      abilities: {
+        str: num(character.abilities?.str, 12),
+        dex: num(character.abilities?.dex, 12),
+        con: num(character.abilities?.con, 12),
+        int: num(character.abilities?.int, 10),
+        wis: num(character.abilities?.wis, 12),
+        cha: num(character.abilities?.cha, 10),
+      },
+      skills: sanitizeSkills(character.skills),
+      attacks: kit.attacks,
+      spells: kit.spells,
+      inventory: sanitizeInventory(character.inventory),
+      conditions: Array.isArray(character.conditions)
+        ? character.conditions.filter((c): c is string => typeof c === 'string')
+        : [],
+      inspiration: Boolean(character.inspiration),
+      deathSaves: {
+        success: num(character.deathSaves?.success, 0),
+        fail: num(character.deathSaves?.fail, 0),
+      },
+      notes: typeof character.notes === 'string' ? character.notes : '',
+      virtue:
+        character.virtue === 'Courage' || character.virtue === 'Wisdom' || character.virtue === 'Power'
+          ? character.virtue
+          : undefined,
+    }
+  } catch {
+    const kit = kitForClass('Fighter 3')
+    return {
+      id: String(character?.id || 'pc-new'),
+      name: String(character?.name || 'New adventurer').slice(0, 40),
+      ancestry: 'Hylian',
+      className: 'Fighter 3',
+      level: 3,
+      hp: { current: 22, max: 22 },
+      ac: 15,
+      speed: 30,
+      abilities: { str: 15, dex: 14, con: 13, int: 10, wis: 12, cha: 8 },
+      skills: ALL_SKILLS.map((s) => ({ ...s })),
+      attacks: kit.attacks,
+      spells: kit.spells,
+      inventory: [],
+      conditions: [],
+      inspiration: false,
+      deathSaves: { success: 0, fail: 0 },
+      notes: '',
+      virtue: 'Courage',
+    }
   }
+}
+
+function num(value: unknown, fallback: number): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  if (typeof value === 'string' && value.trim()) {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return fallback
+}
+
+function sanitizeSkills(raw: unknown): SkillScore[] {
+  if (!Array.isArray(raw) || raw.length === 0) return ALL_SKILLS.map((s) => ({ ...s }))
+  const names = new Set<string>()
+  const fromObjects = new Map<string, boolean>()
+  for (const item of raw) {
+    if (typeof item === 'string' && item.trim()) names.add(item.toLowerCase())
+    if (item && typeof item === 'object' && 'name' in item) {
+      const row = item as SkillScore
+      if (typeof row.name === 'string') fromObjects.set(row.name, Boolean(row.proficient))
+    }
+  }
+  if (fromObjects.size) {
+    const byName = new Map(ALL_SKILLS.map((s) => [s.name, { ...s, proficient: fromObjects.get(s.name) ?? false }]))
+    for (const [name, proficient] of fromObjects) {
+      const prev = byName.get(name)
+      if (prev) byName.set(name, { ...prev, proficient })
+    }
+    return ALL_SKILLS.map((s) => byName.get(s.name) ?? { ...s })
+  }
+  if (names.size) {
+    return ALL_SKILLS.map((s) => ({ ...s, proficient: names.has(s.name.toLowerCase()) }))
+  }
+  return ALL_SKILLS.map((s) => ({ ...s }))
+}
+
+function sanitizeInventory(raw: unknown): InventoryItem[] {
+  if (!Array.isArray(raw)) return []
+  const rarities: InventoryItem['rarity'][] = ['common', 'uncommon', 'rare', 'legendary', 'story']
+  return raw
+    .map((it, i): InventoryItem | null => {
+      if (typeof it === 'string' && it.trim()) {
+        return { id: `it-${i}`, name: it.slice(0, 48), qty: 1, rarity: 'common', notes: '', equipped: false }
+      }
+      if (!it || typeof it !== 'object') return null
+      const row = it as Record<string, unknown>
+      const rarity = rarities.includes(row.rarity as InventoryItem['rarity'])
+        ? (row.rarity as InventoryItem['rarity'])
+        : 'common'
+      return {
+        id: String(row.id || `it-${i}`),
+        name: String(row.name || 'Item').slice(0, 48),
+        qty: Math.max(0, num(row.qty, 1)),
+        rarity,
+        notes: typeof row.notes === 'string' ? row.notes : '',
+        equipped: Boolean(row.equipped),
+      }
+    })
+    .filter((it): it is InventoryItem => Boolean(it))
 }

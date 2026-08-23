@@ -51,14 +51,16 @@ export function proficiencyBonus(level: number): number {
 
 export function buildHandout(character: Character): PlayerHandout {
   const prof = proficiencyBonus(character.level || 3)
+  const abilities = character.abilities ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
   const attacks = collectAttacks(character, prof)
-  const skills = [...(character.skills ?? [])]
+  const skills = [...(Array.isArray(character.skills) ? character.skills : [])]
+    .filter((sk): sk is SkillScore => Boolean(sk) && typeof sk === 'object' && typeof sk.name === 'string')
     .sort((a, b) => Number(b.proficient) - Number(a.proficient) || a.name.localeCompare(b.name))
-    .map((sk) => skillLine(sk, character.abilities, prof))
+    .map((sk) => skillLine(sk, abilities, prof))
   const saveKeys = saveProficiencies(character.className)
   const saves = ABILITIES.map((ab) => {
     const proficient = saveKeys.includes(ab)
-    const bonus = abilityMod(character.abilities[ab]) + (proficient ? prof : 0)
+    const bonus = abilityMod(abilities[ab]) + (proficient ? prof : 0)
     return {
       name: ab.toUpperCase(),
       roll: `d20${formatMod(bonus)}`,
@@ -66,19 +68,23 @@ export function buildHandout(character: Character): PlayerHandout {
       ability: ab,
     }
   })
+  const hp =
+    character.hp && typeof character.hp === 'object'
+      ? character.hp.max
+      : character.hp
   return {
     id: character.id,
-    name: character.name,
-    subtitle: `${character.ancestry} ${character.className}`,
+    name: String(character.name || 'Adventurer'),
+    subtitle: `${character.ancestry ?? ''} ${character.className ?? ''}`.trim(),
     virtue: character.virtue,
-    hp: `${character.hp.max}`,
+    hp: `${hp ?? 0}`,
     ac: character.ac,
     speed: character.speed,
     proficiency: prof,
     abilities: ABILITIES.map((key) => ({
       key: key.toUpperCase(),
-      score: character.abilities[key],
-      mod: formatMod(abilityMod(character.abilities[key])),
+      score: abilities[key],
+      mod: formatMod(abilityMod(abilities[key])),
     })),
     attacks,
     skills,
@@ -102,20 +108,21 @@ function skillLine(
   return {
     name: skill.name,
     roll: `d20${formatMod(bonus)}`,
-    proficient: skill.proficient,
-    ability: skill.ability.toUpperCase(),
+    proficient: Boolean(skill.proficient),
+    ability: String(skill.ability || 'dex').toUpperCase(),
   }
 }
 
 export function parseAttackFromNotes(name: string, notes: string): HandoutAttack | null {
-  const toHitM = notes.match(/([+-]\d+)\s*to hit/i)
+  const text = String(notes ?? '')
+  const toHitM = text.match(/([+-]\d+)\s*to hit/i)
   const dmgRe = new RegExp(`(\\d+d\\d+(?:\\s*[+\\u2212-]\\s*\\d+)?)(?:\\s+(${DAMAGE_TYPES}))?`, 'i')
-  const dmgM = notes.match(dmgRe)
+  const dmgM = text.match(dmgRe)
   if (!toHitM && !(dmgM?.[2])) return null
   const toHit = toHitM ? Number(toHitM[1]) : null
   const dice = compactDice(dmgM?.[1] ?? '')
   const dtype = (dmgM?.[2] ?? '').toLowerCase()
-  const range = parseRange(notes)
+  const range = parseRange(text)
   const hitRoll = toHit == null ? '—' : `d20${formatMod(toHit)}`
   const damageText = [dice, dtype].filter(Boolean).join(' ')
   return {
@@ -173,8 +180,8 @@ function collectAttacks(character: Character, prof: number): HandoutAttack[] {
     attacks.push(row)
   }
 
-  for (const row of (character.attacks ?? []).map((m) => moveToHandout(m, 'weapon'))) push(row)
-  for (const row of (character.spells ?? []).map((m) => moveToHandout(m, 'spell'))) push(row)
+  for (const row of (Array.isArray(character.attacks) ? character.attacks : []).map((m) => moveToHandout(m, 'weapon'))) push(row)
+  for (const row of (Array.isArray(character.spells) ? character.spells : []).map((m) => moveToHandout(m, 'spell'))) push(row)
   if (attacks.length >= 4) return attacks
 
   for (const item of character.inventory ?? []) {
@@ -194,17 +201,23 @@ function collectAttacks(character: Character, prof: number): HandoutAttack[] {
 }
 
 function moveToHandout(move: { name: string; hit: string; damage: string; range: string; notes: string }, kind: 'weapon' | 'spell'): HandoutAttack {
+  const damage = String(move?.damage ?? '')
+  const hit = String(move?.hit ?? '')
+  const range = String(move?.range ?? '')
+  const name = String(move?.name ?? 'Attack')
+  const notes = String(move?.notes ?? '')
   const dmgRe = new RegExp(`(\\d+d\\d+(?:\\s*[+\\u2212-]\\s*\\d+)?)`, 'i')
-  const dmgM = move.damage.match(dmgRe)
-  const dice = compactDice(dmgM?.[1] ?? (move.damage.includes('d') ? move.damage.split(' ')[0] : ''))
+  const dmgM = damage.match(dmgRe)
+  const dice = compactDice(dmgM?.[1] ?? (damage.includes('d') ? damage.split(' ')[0] : ''))
+  const safeMove = { name, hit, damage, range, notes }
   return {
-    name: tidyName(move.name),
+    name: tidyName(name),
     kind,
-    hitRoll: move.hit || '—',
-    damageRoll: dice || move.damage || '—',
-    damageText: move.damage || '—',
-    range: move.range || '',
-    instruction: move.notes?.trim() || instructionFromMove(move, kind),
+    hitRoll: hit || '—',
+    damageRoll: dice || damage || '—',
+    damageText: damage || '—',
+    range,
+    instruction: notes.trim() || instructionFromMove(safeMove, kind),
   }
 }
 
@@ -283,10 +296,11 @@ function casterAbility(className: string): Ability {
 }
 
 function classTricks(character: Character, prof: number): string[] {
-  const c = character.className.toLowerCase()
-  const str = abilityMod(character.abilities.str)
-  const cha = abilityMod(character.abilities.cha)
-  const wis = abilityMod(character.abilities.wis)
+  const c = String(character.className || '').toLowerCase()
+  const abilities = character.abilities ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 }
+  const str = abilityMod(abilities.str)
+  const cha = abilityMod(abilities.cha)
+  const wis = abilityMod(abilities.wis)
   const tricks: string[] = []
   if (/fighter/.test(c)) {
     tricks.push(`Second Wind (bonus action): roll 1d10+${character.level} and heal that HP. 1/short rest.`)
@@ -299,7 +313,7 @@ function classTricks(character: Character, prof: number): string[] {
   }
   if (/wizard|sorcerer|bard/.test(c)) {
     const ab = casterAbility(character.className)
-    const mod = abilityMod(character.abilities[ab])
+    const mod = abilityMod(abilities[ab])
     tricks.push(
       `Spell slots: 4 first-level, 2 second-level. Save DC ${8 + prof + mod}. Spell attack d20${formatMod(mod + prof)}.`,
     )
@@ -318,7 +332,7 @@ function classTricks(character: Character, prof: number): string[] {
   if (/druid/.test(c)) {
     tricks.push(`Spell slots: 4 first-level, 2 second-level. Save DC ${8 + prof + wis}.`)
   }
-  const extra = character.notes
+  const extra = String(character.notes || '')
     .split(/[.\n]/)
     .map((s) => s.trim())
     .filter((s) => /\b(1d\d+|2d\d+|bonus action|advantage)\b/i.test(s) && !/DC\s*\d+/i.test(s))
