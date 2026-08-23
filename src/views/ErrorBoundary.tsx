@@ -16,13 +16,24 @@ export class ErrorBoundary extends Component<
 
   render() {
     if (!this.state.error) return this.props.children
+    const message = String(this.state.error.message || 'The last action crashed this screen.')
+    const storeMissing = /store missing/i.test(message)
     return (
       <div className="crash-card">
         <p className="kicker">Something broke</p>
         <h1>{this.props.title || 'The Pad hit a sour note'}</h1>
-        <p className="lede">{String(this.state.error.message || 'The last action crashed this screen.')}</p>
-        <button type="button" onClick={() => this.setState({ error: null })}>
-          Try again
+        <p className="lede">{message}</p>
+        <button
+          type="button"
+          onClick={() => {
+            if (storeMissing) {
+              window.location.reload()
+              return
+            }
+            this.setState({ error: null })
+          }}
+        >
+          {storeMissing ? 'Reload the Pad' : 'Try again'}
         </button>
       </div>
     )

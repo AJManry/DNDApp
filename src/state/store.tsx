@@ -314,13 +314,19 @@ interface StoreValue {
   setLlmSettings: (settings: LlmSettings) => void
 }
 
-const StoreContext = createContext<StoreValue | null>(null)
+const hotData = import.meta.hot?.data as { storeContext?: ReturnType<typeof createContext<StoreValue | null>> }
+const StoreContext = hotData?.storeContext ?? createContext<StoreValue | null>(null)
+if (import.meta.hot) import.meta.hot.data.storeContext = StoreContext
 
 export function HyruleProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(reducer, undefined, loadState)
   const stateRef = useRef(state)
   stateRef.current = state
   const [llmSettings, setLlmSettingsState] = useState(loadLlmSettings)
+
+  useEffect(() => {
+    setLlmSettingsState(loadLlmSettings())
+  }, [])
 
   useEffect(() => {
     try {

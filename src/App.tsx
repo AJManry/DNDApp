@@ -149,9 +149,11 @@ function formatElapsed(ms: number): string {
 
 export default function App() {
   return (
-    <ErrorBoundary>
+    <ErrorBoundary title="The Pad failed to start">
       <HyruleProvider>
-        <Shell />
+        <ErrorBoundary>
+          <Shell />
+        </ErrorBoundary>
       </HyruleProvider>
     </ErrorBoundary>
   )

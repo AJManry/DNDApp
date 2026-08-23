@@ -23,7 +23,7 @@ export function PartyView() {
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
-  const hasCursorKey = Boolean(llmSettings.apiKey.trim() || loadLlmSettings().apiKey.trim())
+  const hasCursorKey = Boolean(llmSettings.apiKey.trim())
 
   async function generate(from = prompt) {
     const q = from.trim()
