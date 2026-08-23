@@ -8,7 +8,7 @@ import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
 import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
-import { forgeFromPrompt, nameFromPrompt, parseCharacterReply } from './characterForge'
+import { forgeFromPrompt, nameFromPrompt, parseCharacterReply, assembleCharacter } from './characterForge'
 import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
 import { CAMPAIGN, scenes } from '../data/campaign'
@@ -154,6 +154,9 @@ describe('cursor oracle', () => {
     expect(prompt).toMatch(/READ-ONLY/)
     expect(prompt).toMatch(/pregens/)
     expect(prompt).toMatch(/Nabooru/)
+    expect(prompt).toMatch(/two attacks and two spells/i)
+    expect(prompt).toMatch(/"attacks"/)
+    expect(prompt).toMatch(/"spells"/)
     expect(prompt).not.toMatch(/pollinations/i)
     expect(prompt).not.toMatch(/"answer"/)
   })
@@ -202,6 +205,10 @@ describe('character forge', () => {
     expect(hero.className).toMatch(/Fighter/)
     expect(hero.level).toBe(3)
     expect(hero.inventory.length).toBeGreaterThan(0)
+    expect(hero.attacks).toHaveLength(2)
+    expect(hero.spells).toHaveLength(2)
+    expect(hero.attacks[0]?.hit).toMatch(/d20/)
+    expect(hero.spells.some((s) => /Nayru|Spin/i.test(s.name))).toBe(true)
     expect(hero.portrait).toMatch(/pollinations/)
   })
 
@@ -215,11 +222,13 @@ describe('character forge', () => {
 
   it('parses a model JSON sheet', () => {
     const draft = parseCharacterReply(
-      '{"name":"Tebael","ancestry":"Rito","className":"Ranger 3","virtue":"Courage","hp":24,"ac":14,"speed":30,"abilities":{"str":10,"dex":16,"con":14,"int":10,"wis":14,"cha":8},"proficientSkills":["Stealth"],"inventory":[{"name":"Eagle bow","qty":1,"rarity":"uncommon","notes":"+5","equipped":true}],"notes":"Flight Range scout."}',
+      '{"name":"Tebael","ancestry":"Rito","className":"Ranger 3","virtue":"Courage","hp":24,"ac":14,"speed":30,"abilities":{"str":10,"dex":16,"con":14,"int":10,"wis":14,"cha":8},"proficientSkills":["Stealth"],"inventory":[{"name":"Eagle bow","qty":1,"rarity":"uncommon","notes":"+5","equipped":true}],"attacks":[{"name":"Eagle bow","hit":"d20+5","damage":"1d8+3 piercing","range":"150/600 ft"}],"spells":[{"name":"Hunter’s Mark","hit":"bonus action","damage":"+1d6","range":"90 ft"}],"notes":"Flight Range scout."}',
     )
     expect(draft?.name).toBe('Tebael')
     expect(draft?.ancestry).toBe('Rito')
     expect(draft?.proficientSkills).toContain('Stealth')
+    expect(draft?.attacks?.[0]?.name).toMatch(/Eagle/)
+    expect(draft?.spells?.[0]?.name).toMatch(/Hunter/)
   })
 
   it('unwraps a Cursor Oracle-style answer wrapper', () => {
@@ -230,10 +239,26 @@ describe('character forge', () => {
     expect(draft?.ancestry).toBe('Gerudo')
   })
 
+  it('pads a Cursor sheet that forgot a second spell', () => {
+    const hero = assembleCharacter({
+      name: 'Riju-kai',
+      ancestry: 'Gerudo',
+      className: 'Fighter 3',
+      attacks: [{ name: 'Scimitar', hit: 'd20+5', damage: '1d6+3 slashing', range: '5 ft' }],
+      spells: [{ name: 'Nayru’s Love', hit: 'reaction', damage: '+5 AC', range: 'self' }],
+    })
+    expect(hero.attacks).toHaveLength(2)
+    expect(hero.spells).toHaveLength(2)
+    expect(hero.attacks[0]?.name).toMatch(/Scimitar/)
+    expect(hero.spells.some((s) => /Spin/i.test(s.name))).toBe(true)
+  })
+
   it('defaults unnamed Hylians to Ranger', () => {
     const hero = forgeFromPrompt('a quiet traveler who still hears the Song of Time')
     expect(hero.ancestry).toBe('Hylian')
     expect(hero.className).toMatch(/Ranger/)
+    expect(hero.attacks).toHaveLength(2)
+    expect(hero.spells).toHaveLength(2)
   })
 })
 
@@ -272,12 +297,21 @@ describe('player handouts', () => {
     expect(sheet.saves.find((s) => s.name === 'STR')?.proficient).toBe(true)
   })
 
-  it('lists Sheik’s prepared spells with the dice to roll', () => {
-    const sheet = buildHandout(pregens[1])
-    const missile = sheet.attacks.find((a) => a.name === 'Magic Missile')
+  it('puts two attacks and two spells on every pregen and handout', () => {
+    for (const hero of pregens) {
+      expect(hero.attacks.length).toBeGreaterThanOrEqual(2)
+      expect(hero.spells.length).toBeGreaterThanOrEqual(2)
+      const sheet = buildHandout(hero)
+      const weapons = sheet.attacks.filter((a) => a.kind !== 'spell')
+      const spells = sheet.attacks.filter((a) => a.kind === 'spell')
+      expect(weapons.length).toBeGreaterThanOrEqual(2)
+      expect(spells.length).toBeGreaterThanOrEqual(2)
+    }
+    const sheik = buildHandout(pregens[1])
+    const missile = sheik.attacks.find((a) => a.name === 'Magic Missile')
     expect(missile?.hitRoll).toBe('auto-hit')
     expect(missile?.damageRoll).toBe('1d4+1')
-    expect(sheet.attacks.some((a) => a.name === 'Shatter')).toBe(true)
+    expect(sheik.attacks.some((a) => a.name === 'Shatter')).toBe(true)
   })
 })
 

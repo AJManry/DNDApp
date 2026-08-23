@@ -464,6 +464,19 @@ figcaption { padding: 0.5rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
 .sheet-top { grid-template-columns: repeat(4, 1fr); }
 .hp-edit { grid-template-columns: auto 1fr auto 90px 90px auto; align-items: center; }
 .abilities { grid-template-columns: repeat(6, 1fr); }
+.combat-kit { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 0 0 1rem; }
+.combat-kit .hint { margin: 0 0 0.55rem; }
+.combat-moves { list-style: none; margin: 0; padding: 0; }
+.combat-move {
+  display: grid;
+  grid-template-columns: 1.3fr 0.9fr 1fr 0.8fr;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--line);
+}
+.combat-move .notes { grid-column: 1 / -1; }
+.combat-move .notes textarea { min-height: 48px; }
 .abilities label, .sheet-top label { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.78rem; color: var(--muted); }
 .split { display: grid; grid-template-columns: 1fr 1.2fr; gap: 1rem; }
 .skills li, .inventory li { display: grid; gap: 0.35rem; align-items: center; margin-bottom: 0.35rem; }
@@ -680,7 +693,7 @@ figcaption { padding: 0.5rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
   .app { grid-template-columns: 1fr; }
   .rail { flex-direction: row; flex-wrap: wrap; }
   .tabs { flex-direction: row; flex: 1; overflow: auto; }
-  .play, .play-main, .oracle, .maps-head, .map-stage, .split, .journal, .sheet-top, .hp-edit, .abilities, .tactics, .handout-split, .handout-abilities, .handout-skills, .handout-saves, .home-split {
+  .play, .play-main, .oracle, .maps-head, .map-stage, .split, .journal, .sheet-top, .hp-edit, .abilities, .combat-kit, .combat-move, .tactics, .handout-split, .handout-abilities, .handout-skills, .handout-saves, .home-split {
     grid-template-columns: 1fr;
   }
 }

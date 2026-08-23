@@ -17,8 +17,8 @@ export function HandoutsView() {
           <p className="kicker">Player sheets</p>
           <h1>Printable handouts</h1>
           <p className="lede">
-            One page per adventurer: attacks, the dice to roll, damage, skills, and saves. Print these and put them at
-            the seats.
+            One page per adventurer: two attacks, two spells, the dice to roll, skills, and saves. Print these and put
+            them at the seats.
           </p>
         </div>
         <div className="handouts-actions">
@@ -93,26 +93,12 @@ function HandoutCard({ sheet }: { sheet: PlayerHandout }) {
         ))}
       </div>
       <section>
-        <h3>Attacks &amp; magic — pick one and roll</h3>
-        {sheet.attacks.length === 0 ? (
-          <p className="handout-empty">No attacks parsed. Add “+5 to hit, 1d8+3 slashing” to a weapon’s notes.</p>
-        ) : (
-          <table className="handout-table">
-            <thead>
-              <tr>
-                <th>Do this</th>
-                <th>Hit / save</th>
-                <th>Damage dice</th>
-                <th>Range</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sheet.attacks.map((row) => (
-                <AttackRows key={`${row.name}-${row.hitRoll}`} row={row} />
-              ))}
-            </tbody>
-          </table>
-        )}
+        <h3>Attacks — pick one and roll</h3>
+        <MoveTable rows={sheet.attacks.filter((a) => a.kind !== 'spell')} empty="No attacks on this sheet yet." />
+      </section>
+      <section>
+        <h3>Spells — pick one and roll</h3>
+        <MoveTable rows={sheet.attacks.filter((a) => a.kind === 'spell')} empty="No spells on this sheet yet." />
       </section>
       <div className="handout-split">
         <section>
@@ -164,6 +150,27 @@ function HandoutCard({ sheet }: { sheet: PlayerHandout }) {
         </ol>
       </footer>
     </article>
+  )
+}
+
+function MoveTable({ rows, empty }: { rows: HandoutAttack[]; empty: string }) {
+  if (!rows.length) return <p className="handout-empty">{empty}</p>
+  return (
+    <table className="handout-table">
+      <thead>
+        <tr>
+          <th>Do this</th>
+          <th>Hit / save</th>
+          <th>Damage dice</th>
+          <th>Range</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <AttackRows key={`${row.name}-${row.hitRoll}`} row={row} />
+        ))}
+      </tbody>
+    </table>
   )
 }
 

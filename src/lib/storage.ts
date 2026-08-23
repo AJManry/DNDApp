@@ -1,6 +1,7 @@
 import { pregens } from '../data/pregens'
 import { scenes } from '../data/campaign'
 import { battleMapForScene } from '../data/maps'
+import { normalizeCharacter } from './combatKit'
 import type { AppState } from '../types'
 
 export const STORAGE_KEY = 'hyrule-state-v1'
@@ -11,7 +12,7 @@ export function defaultState(): AppState {
     oracleQuery: '',
     oracleThread: [],
     oracleBusy: false,
-    party: structuredClone(pregens),
+    party: structuredClone(pregens).map((c) => normalizeCharacter(c)),
     selectedCharacterId: pregens[0]?.id ?? null,
     initiative: [],
     sceneId: scenes[0]?.id ?? '',
@@ -35,7 +36,11 @@ export function loadState(): AppState {
     if (!raw) return defaultState()
     const parsed = JSON.parse(raw) as Partial<AppState>
     const thread = (parsed.oracleThread ?? []).filter((m) => !m.pending)
-    return { ...defaultState(), ...parsed, oracleThread: thread, oracleBusy: false }
+    const merged = { ...defaultState(), ...parsed, oracleThread: thread, oracleBusy: false }
+    return {
+      ...merged,
+      party: (merged.party ?? []).map((c) => normalizeCharacter(c)),
+    }
   } catch {
     return defaultState()
   }

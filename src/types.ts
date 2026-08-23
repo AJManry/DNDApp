@@ -97,6 +97,15 @@ export interface InventoryItem {
   equipped?: boolean
 }
 
+export interface CombatMove {
+  id: string
+  name: string
+  hit: string
+  damage: string
+  range: string
+  notes: string
+}
+
 export interface SkillScore {
   name: string
   ability: 'str' | 'dex' | 'con' | 'int' | 'wis' | 'cha'
@@ -122,6 +131,8 @@ export interface Character {
     cha: number
   }
   skills: SkillScore[]
+  attacks: CombatMove[]
+  spells: CombatMove[]
   inventory: InventoryItem[]
   conditions: string[]
   inspiration: boolean

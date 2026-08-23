@@ -52,7 +52,7 @@ export function proficiencyBonus(level: number): number {
 export function buildHandout(character: Character): PlayerHandout {
   const prof = proficiencyBonus(character.level || 3)
   const attacks = collectAttacks(character, prof)
-  const skills = [...character.skills]
+  const skills = [...(character.skills ?? [])]
     .sort((a, b) => Number(b.proficient) - Number(a.proficient) || a.name.localeCompare(b.name))
     .map((sk) => skillLine(sk, character.abilities, prof))
   const saveKeys = saveProficiencies(character.className)
@@ -173,20 +173,56 @@ function collectAttacks(character: Character, prof: number): HandoutAttack[] {
     attacks.push(row)
   }
 
-  for (const item of character.inventory) {
+  for (const row of (character.attacks ?? []).map((m) => moveToHandout(m, 'weapon'))) push(row)
+  for (const row of (character.spells ?? []).map((m) => moveToHandout(m, 'spell'))) push(row)
+  if (attacks.length >= 4) return attacks
+
+  for (const item of character.inventory ?? []) {
     if (isGear(item)) continue
     push(parseAttackFromNotes(item.name, item.notes || ''))
   }
 
-  const blob = [character.notes, ...character.inventory.map((it) => `${it.name}. ${it.notes}`)].join('\n')
+  const blob = [character.notes, ...(character.inventory ?? []).map((it) => `${it.name}. ${it.notes}`)].join('\n')
   for (const row of parseDcEffects(blob)) push(row)
-  const spellText = character.inventory
+  const spellText = (character.inventory ?? [])
     .filter((it) => /prepared|spell slot|spellbook|knows /i.test(it.notes || ''))
     .map((it) => it.notes)
     .join('\n')
   for (const row of spellsFromText(spellText, character, prof)) push(row)
 
   return attacks
+}
+
+function moveToHandout(move: { name: string; hit: string; damage: string; range: string; notes: string }, kind: 'weapon' | 'spell'): HandoutAttack {
+  const dmgRe = new RegExp(`(\\d+d\\d+(?:\\s*[+\\u2212-]\\s*\\d+)?)`, 'i')
+  const dmgM = move.damage.match(dmgRe)
+  const dice = compactDice(dmgM?.[1] ?? (move.damage.includes('d') ? move.damage.split(' ')[0] : ''))
+  return {
+    name: tidyName(move.name),
+    kind,
+    hitRoll: move.hit || '—',
+    damageRoll: dice || move.damage || '—',
+    damageText: move.damage || '—',
+    range: move.range || '',
+    instruction: move.notes?.trim() || instructionFromMove(move, kind),
+  }
+}
+
+function instructionFromMove(
+  move: { hit: string; damage: string; range: string; name: string },
+  kind: 'weapon' | 'spell',
+): string {
+  const range = move.range ? ` (${move.range})` : ''
+  if (/^d20/i.test(move.hit)) {
+    return `Roll ${move.hit} versus AC. Hit: roll ${move.damage}${range}.`
+  }
+  if (/^DC/i.test(move.hit)) {
+    return `They roll versus ${move.hit}. Fail: ${move.damage}. Success: half if it is damage.${range}`
+  }
+  if (/auto/i.test(move.hit)) {
+    return `No attack. ${move.damage}${range}.`
+  }
+  return `${kind === 'spell' ? 'Cast' : 'Use'} ${move.name}: ${move.hit}. ${move.damage}${range}.`
 }
 
 function isGear(item: InventoryItem): boolean {

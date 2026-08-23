@@ -20,6 +20,7 @@ import { makeGeneratedMap } from '../lib/mapStudio'
 import { askSage, type SageAskResult } from '../lib/sage'
 import { defaultState, loadState, saveState } from '../lib/storage'
 import { emptyTactics } from '../lib/tactics'
+import { normalizeCharacter } from '../lib/combatKit'
 import type {
   AppState,
   Character,
@@ -169,7 +170,7 @@ function reducer(state: AppState, action: Action): AppState {
     case 'add-character':
       return {
         ...state,
-        party: [...state.party, action.character],
+        party: [...state.party, normalizeCharacter(action.character)],
         selectedCharacterId: action.character.id,
       }
     case 'remove-character':
@@ -184,7 +185,7 @@ function reducer(state: AppState, action: Action): AppState {
       return {
         ...state,
         party: state.party.map((c) =>
-          c.id === action.characterId ? { ...c, inventory: [...c.inventory, action.item] } : c,
+          c.id === action.characterId ? { ...c, inventory: [...(c.inventory ?? []), action.item] } : c,
         ),
       }
     case 'patch-item':
@@ -194,7 +195,7 @@ function reducer(state: AppState, action: Action): AppState {
           c.id === action.characterId
             ? {
                 ...c,
-                inventory: c.inventory.map((it) => (it.id === action.itemId ? { ...it, ...action.patch } : it)),
+                inventory: (c.inventory ?? []).map((it) => (it.id === action.itemId ? { ...it, ...action.patch } : it)),
               }
             : c,
         ),
@@ -204,7 +205,7 @@ function reducer(state: AppState, action: Action): AppState {
         ...state,
         party: state.party.map((c) =>
           c.id === action.characterId
-            ? { ...c, inventory: c.inventory.filter((it) => it.id !== action.itemId) }
+            ? { ...c, inventory: (c.inventory ?? []).filter((it) => it.id !== action.itemId) }
             : c,
         ),
       }

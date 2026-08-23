@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { ALL_SKILLS, abilityMod, formatMod, skillBonus } from '../data/skills'
-import { generateCharacterFromPrompt } from '../lib/characterForge'
+import { abilityMod, formatMod, skillBonus } from '../data/skills'
+import { generateCharacterFromPrompt, assembleCharacter } from '../lib/characterForge'
 import { CURSOR_DASHBOARD_KEYS } from '../lib/cursorAgent'
 import { useHyrule } from '../state/store'
-import type { Character, InventoryItem } from '../types'
+import type { Character, CombatMove, InventoryItem } from '../types'
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Frightened', 'Grappled', 'Poisoned', 'Prone', 'Restrained', 'Stunned']
 
@@ -52,8 +52,8 @@ export function PartyView() {
         <h1>Forge an adventurer</h1>
         <p className="lede">
           Describe a Hyrulean in a sentence — ancestry, vocation, and a wound or hope. A Cursor Cloud Agent forges a
-          3rd-level sheet you can edit. It uses your Cursor API key from Oracle → Model settings, not Pollinations or
-          another chat API.{' '}
+          3rd-level sheet with two attacks and two spells you can edit. It uses your Cursor API key from Oracle → Model
+          settings, not Pollinations or another chat API.{' '}
           <a href={CURSOR_DASHBOARD_KEYS} target="_blank" rel="noreferrer">
             Get a key
           </a>
@@ -234,11 +234,25 @@ function Sheet({ character }: { character: Character }) {
           </label>
         ))}
       </div>
+      <div className="combat-kit">
+        <MoveEditor
+          title="Attacks"
+          hint="Two weapons or strikes. Hit dice versus AC, then damage."
+          moves={character.attacks ?? []}
+          onChange={(attacks) => patch({ attacks })}
+        />
+        <MoveEditor
+          title="Spells"
+          hint="Two spells even for martial heroes — Zelda gifts, smites, or slots."
+          moves={character.spells ?? []}
+          onChange={(spells) => patch({ spells })}
+        />
+      </div>
       <div className="split">
         <section>
           <h3>Skills</h3>
           <ul className="skills">
-            {character.skills.map((sk) => (
+            {(character.skills ?? []).map((sk) => (
               <li key={sk.name}>
                 <label>
                   <input
@@ -262,7 +276,7 @@ function Sheet({ character }: { character: Character }) {
         <section>
           <h3>Inventory</h3>
           <ul className="inventory">
-            {character.inventory.map((it) => (
+            {(character.inventory ?? []).map((it) => (
               <li key={it.id}>
                 <input
                   value={it.name}
@@ -353,7 +367,7 @@ function Sheet({ character }: { character: Character }) {
           <h3>Conditions</h3>
           <div className="chips">
             {CONDITIONS.map((c) => {
-              const on = character.conditions.includes(c)
+              const on = (character.conditions ?? []).includes(c)
               return (
                 <button
                   key={c}
@@ -361,8 +375,8 @@ function Sheet({ character }: { character: Character }) {
                   onClick={() =>
                     patch({
                       conditions: on
-                        ? character.conditions.filter((x) => x !== c)
-                        : [...character.conditions, c],
+                        ? (character.conditions ?? []).filter((x) => x !== c)
+                        : [...(character.conditions ?? []), c],
                     })
                   }
                 >
@@ -417,22 +431,80 @@ function Sheet({ character }: { character: Character }) {
   )
 }
 
+function MoveEditor({
+  title,
+  hint,
+  moves,
+  onChange,
+}: {
+  title: string
+  hint: string
+  moves: CombatMove[]
+  onChange: (next: CombatMove[]) => void
+}) {
+  function patchMove(id: string, patch: Partial<CombatMove>) {
+    onChange(moves.map((m) => (m.id === id ? { ...m, ...patch } : m)))
+  }
+  function addMove() {
+    onChange([
+      ...moves,
+      {
+        id: `${title.slice(0, 3).toLowerCase()}-${Date.now().toString(36)}`,
+        name: title === 'Spells' ? 'New spell' : 'New attack',
+        hit: 'd20+5',
+        damage: '1d6',
+        range: '5 ft',
+        notes: '',
+      },
+    ])
+  }
+  return (
+    <section>
+      <h3>{title}</h3>
+      <p className="hint">{hint}</p>
+      <ul className="combat-moves">
+        {moves.map((m) => (
+          <li key={m.id} className="combat-move">
+            <label>
+              Name
+              <input value={m.name} onChange={(e) => patchMove(m.id, { name: e.target.value })} />
+            </label>
+            <label>
+              Hit / save
+              <input value={m.hit} onChange={(e) => patchMove(m.id, { hit: e.target.value })} />
+            </label>
+            <label>
+              Damage
+              <input value={m.damage} onChange={(e) => patchMove(m.id, { damage: e.target.value })} />
+            </label>
+            <label>
+              Range
+              <input value={m.range} onChange={(e) => patchMove(m.id, { range: e.target.value })} />
+            </label>
+            <label className="notes">
+              How to roll
+              <textarea value={m.notes} onChange={(e) => patchMove(m.id, { notes: e.target.value })} />
+            </label>
+          </li>
+        ))}
+      </ul>
+      <button type="button" className="ghost" onClick={addMove}>
+        Add {title === 'Spells' ? 'spell' : 'attack'}
+      </button>
+    </section>
+  )
+}
+
 function blankHero(): Character {
-  return {
-    id: `pc-${Date.now()}`,
+  return assembleCharacter({
     name: 'New adventurer',
     ancestry: 'Hylian',
     className: 'Fighter 3',
-    level: 3,
-    hp: { current: 22, max: 22 },
+    virtue: 'Courage',
+    hp: 22,
     ac: 15,
     speed: 30,
     abilities: { str: 15, dex: 14, con: 13, int: 10, wis: 12, cha: 8 },
-    skills: ALL_SKILLS.map((s) => ({ ...s })),
-    inventory: [],
-    conditions: [],
-    inspiration: false,
-    deathSaves: { success: 0, fail: 0 },
     notes: '',
-  }
+  })
 }

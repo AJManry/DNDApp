@@ -1,5 +1,6 @@
 import type { Character, InventoryItem, SkillScore } from '../types'
 import { ALL_SKILLS } from '../data/skills'
+import { ensureCombatKit, type CombatMoveDraft } from './combatKit'
 import { CURSOR_SCHEME, runCursorForge } from './cursorAgent'
 import { loadLlmSettings } from './llm'
 
@@ -157,6 +158,8 @@ export interface CharacterDraft {
   abilities?: Partial<Character['abilities']>
   proficientSkills?: string[]
   inventory?: { name: string; qty?: number; rarity?: InventoryItem['rarity']; notes?: string; equipped?: boolean }[]
+  attacks?: CombatMoveDraft[]
+  spells?: CombatMoveDraft[]
   notes?: string
 }
 
@@ -238,6 +241,7 @@ export function assembleCharacter(draft: CharacterDraft, prompt = ''): Character
     notes: (it.notes ?? '').slice(0, 180),
     equipped: Boolean(it.equipped),
   }))
+  const kit = ensureCombatKit(draft.className || 'Fighter 3', draft.attacks, draft.spells)
   const virtue = draft.virtue === 'Courage' || draft.virtue === 'Wisdom' || draft.virtue === 'Power' ? draft.virtue : 'Courage'
   const hero: Character = {
     id: `pc-${Date.now().toString(36)}-${Math.floor(Math.random() * 1000)}`,
@@ -250,6 +254,8 @@ export function assembleCharacter(draft: CharacterDraft, prompt = ''): Character
     speed: clamp(draft.speed ?? 30, 20, 40),
     abilities,
     skills: skillsFrom(draft.proficientSkills),
+    attacks: kit.attacks,
+    spells: kit.spells,
     inventory,
     conditions: [],
     inspiration: false,
@@ -288,6 +294,8 @@ export function parseCharacterReply(raw: string): CharacterDraft | null {
     }
     const abilities = asRecord(obj.abilities)
     const inventory = Array.isArray(obj.inventory) ? obj.inventory : []
+    const attacks = Array.isArray(obj.attacks) ? obj.attacks : []
+    const spells = Array.isArray(obj.spells) ? obj.spells : []
     const skills = Array.isArray(obj.proficientSkills)
       ? obj.proficientSkills.filter((s): s is string => typeof s === 'string')
       : []
@@ -318,6 +326,26 @@ export function parseCharacterReply(raw: string): CharacterDraft | null {
           rarity: (asString(it.rarity) as InventoryItem['rarity']) || 'common',
           notes: asString(it.notes) || '',
           equipped: Boolean(it.equipped),
+        })),
+      attacks: attacks
+        .filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === 'object')
+        .map((it) => ({
+          id: asString(it.id),
+          name: asString(it.name),
+          hit: asString(it.hit),
+          damage: asString(it.damage),
+          range: asString(it.range),
+          notes: asString(it.notes),
+        })),
+      spells: spells
+        .filter((it): it is Record<string, unknown> => Boolean(it) && typeof it === 'object')
+        .map((it) => ({
+          id: asString(it.id),
+          name: asString(it.name),
+          hit: asString(it.hit),
+          damage: asString(it.damage),
+          range: asString(it.range),
+          notes: asString(it.notes),
         })),
       notes: asString(obj.notes),
     }
