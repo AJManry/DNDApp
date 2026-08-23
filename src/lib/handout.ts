@@ -310,7 +310,7 @@ const SPELLS: SpellKit[] = [
     damage: '1d4+1 force × 3 darts',
     dice: '1d4+1',
     range: '120 ft',
-    instruction: () => 'No attack roll. Roll 1d4+1 force for each of 3 darts (all hit).',
+    instruction: () => 'No attack. Roll 1d4+1 force for each of 3 darts; all hit.',
   },
   {
     match: /\bsleep\b/i,
@@ -337,7 +337,7 @@ const SPELLS: SpellKit[] = [
     damage: '+5 AC until your next turn',
     dice: '—',
     range: 'self',
-    instruction: () => 'When you are hit, AC becomes +5 until the start of your next turn (may make it miss).',
+    instruction: () => 'When hit, +5 AC until your next turn (may turn a hit into a miss).',
   },
   {
     match: /mage armor/i,
