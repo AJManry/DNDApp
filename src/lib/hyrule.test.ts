@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { abilityMod, formatMod, skillBonus } from '../data/skills'
 import { allLore } from '../data/corpus'
-import { buildCursorPrompt, cursorApiUrl, isCursorProvider } from './cursorAgent'
+import { buildCursorForgePrompt, buildCursorPrompt, cursorApiUrl, isCursorProvider } from './cursorAgent'
 import { normalizeLlmSettings } from './llm'
 import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages } from './sage'
 import { searchLore, tokenize } from './search'
@@ -140,6 +140,16 @@ describe('cursor oracle', () => {
     expect(prompt).toMatch(/Impa/)
   })
 
+  it('builds a Cursor Cloud Agent prompt for character forge, not Pollinations', () => {
+    const prompt = buildCursorForgePrompt('A Gerudo swordswoman named Nabooru')
+    expect(prompt).toMatch(/Hyrule Forge|forging a player character/i)
+    expect(prompt).toMatch(/READ-ONLY/)
+    expect(prompt).toMatch(/pregens/)
+    expect(prompt).toMatch(/Nabooru/)
+    expect(prompt).not.toMatch(/pollinations/i)
+    expect(prompt).not.toMatch(/"answer"/)
+  })
+
   it('routes Cursor API calls through the Vite proxy in dev', () => {
     expect(cursorApiUrl('/v1/agents', { dev: true })).toBe('/cursor-api/v1/agents')
     expect(cursorApiUrl('/v1/agents', { dev: false })).toBe('https://api.cursor.com/v1/agents')
@@ -202,6 +212,14 @@ describe('character forge', () => {
     expect(draft?.name).toBe('Tebael')
     expect(draft?.ancestry).toBe('Rito')
     expect(draft?.proficientSkills).toContain('Stealth')
+  })
+
+  it('unwraps a Cursor Oracle-style answer wrapper', () => {
+    const draft = parseCharacterReply(
+      '{"answer":"{\\"name\\":\\"Riju-kai\\",\\"ancestry\\":\\"Gerudo\\",\\"className\\":\\"Fighter 3\\",\\"virtue\\":\\"Power\\"}"}',
+    )
+    expect(draft?.name).toBe('Riju-kai')
+    expect(draft?.ancestry).toBe('Gerudo')
   })
 
   it('defaults unnamed Hylians to Ranger', () => {

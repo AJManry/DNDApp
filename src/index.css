@@ -442,6 +442,7 @@ figcaption { padding: 0.5rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
 }
 .forge-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
 .forge .chips button { font-size: 0.78rem; text-align: left; max-width: 100%; }
+.forge a { color: var(--gold-2); }
 .pc-card { text-align: left; padding: 0.8rem; }
 .pc-card.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold); }
 .pc-card.add { min-height: 120px; color: var(--muted); }

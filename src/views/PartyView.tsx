@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { ALL_SKILLS, abilityMod, formatMod, skillBonus } from '../data/skills'
-import { forgeFromPrompt, generateCharacterFromPrompt } from '../lib/characterForge'
+import { generateCharacterFromPrompt } from '../lib/characterForge'
+import { CURSOR_DASHBOARD_KEYS } from '../lib/cursorAgent'
 import { useHyrule } from '../state/store'
 import type { Character, InventoryItem } from '../types'
 
@@ -15,28 +16,30 @@ const SUGGESTIONS = [
 ]
 
 export function PartyView() {
-  const { state, dispatch } = useHyrule()
+  const { state, dispatch, llmSettings } = useHyrule()
   const selected = state.party.find((c) => c.id === state.selectedCharacterId) ?? state.party[0]
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
+  const hasCursorKey = Boolean(llmSettings.apiKey.trim())
 
   async function generate(from = prompt) {
     const q = from.trim()
     if (!q || busy) return
+    if (!hasCursorKey) {
+      setStatus('Paste a Cursor API key in Oracle → Model settings. Forge uses your Cursor Cloud Agent only.')
+      dispatch({ type: 'tab', tab: 'oracle' })
+      return
+    }
     setBusy(true)
-    setStatus('Impa is forging a sheet from your prompt…')
+    setStatus('Cursor is forging a 3rd-level sheet. This can take a minute…')
     setPrompt(q)
     try {
       const hero = await generateCharacterFromPrompt(q)
       dispatch({ type: 'add-character', character: hero })
       setStatus(`Created ${hero.name}, ${hero.ancestry} ${hero.className}.`)
     } catch (err) {
-      const hero = forgeFromPrompt(q)
-      dispatch({ type: 'add-character', character: hero })
-      setStatus(
-        `Forged ${hero.name} locally. ${err instanceof Error ? err.message : ''}`.trim(),
-      )
+      setStatus(err instanceof Error ? err.message : 'Cursor could not forge that character.')
     } finally {
       setBusy(false)
     }
@@ -48,8 +51,13 @@ export function PartyView() {
         <p className="kicker">Character creation</p>
         <h1>Forge an adventurer</h1>
         <p className="lede">
-          Describe a Hyrulean in a sentence — ancestry, vocation, and a wound or hope. The table forges a 3rd-level
-          sheet you can edit, with a portrait. If the Oracle is slow or unavailable, a local Hyrule kit is used.
+          Describe a Hyrulean in a sentence — ancestry, vocation, and a wound or hope. A Cursor Cloud Agent forges a
+          3rd-level sheet you can edit. It uses your Cursor API key from Oracle → Model settings, not Pollinations or
+          another chat API.{' '}
+          <a href={CURSOR_DASHBOARD_KEYS} target="_blank" rel="noreferrer">
+            Get a key
+          </a>
+          .
         </p>
         <form
           className="forge-form"
@@ -68,7 +76,7 @@ export function PartyView() {
           />
           <div className="forge-actions">
             <button type="submit" disabled={busy || !prompt.trim()}>
-              {busy ? 'Forging…' : 'Generate from prompt'}
+              {busy ? 'Cursor is forging…' : hasCursorKey ? 'Generate from prompt' : 'Add Cursor key to generate'}
             </button>
             <button
               type="button"

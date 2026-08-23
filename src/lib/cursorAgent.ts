@@ -54,25 +54,64 @@ export function buildCursorPrompt(messages: ChatMessage[]): string {
   ].join('\n')
 }
 
+export function buildCursorForgePrompt(userPrompt: string): string {
+  return [
+    'You are forging a player character for a Legend of Zelda D&D 5e one-shot (The Song of Time) from inside a Cursor Cloud Agent.',
+    'This is a READ-ONLY lookup. Do not edit, create, delete, commit, or push files.',
+    'Do not open a pull request. Do not run git write commands. Do not use computer-use.',
+    'You MAY search this repository: Grep/Read src/data/pregens.ts, src/data/skills.ts, src/lib/characterForge.ts, src/types.ts, and src/data/lore.ts. Match the sheet shape of the pregens.',
+    'Create one 3rd-level adventurer from the player’s prompt. Ancestries: Hylian, Sheikah, Goron, Zora, Gerudo, Rito, Kokiri, Korok, Twili.',
+    'Give a Triforce virtue: Courage, Wisdom, or Power. Inventory notes must include attack dice like “+5 to hit, 1d8+3 slashing.”',
+    'Reply with ONLY this JSON object, no markdown fence, no Impa voice, no Oracle wrapper object:',
+    '{"name":"","ancestry":"","className":"Ranger 3 (Gloom Walker)","virtue":"Courage","hp":24,"ac":14,"speed":30,',
+    '"abilities":{"str":10,"dex":16,"con":14,"int":10,"wis":14,"cha":8},"proficientSkills":["Stealth","Survival"],',
+    '"inventory":[{"name":"Shortbow","qty":1,"rarity":"common","notes":"+5 to hit, 1d6+3 piercing, 80/320.","equipped":true}],',
+    '"notes":"two sentences of backstory"}',
+    '',
+    '### player prompt',
+    userPrompt.trim(),
+  ].join('\n')
+}
+
 export async function runCursorOracle(
   messages: ChatMessage[],
   settings: LlmSettings,
 ): Promise<CursorRunResult> {
+  return runCursorJob(buildCursorPrompt(messages), settings, {
+    name: 'Hyrule Oracle',
+    reuseAgent: true,
+    emptyError: 'Cursor returned an empty Oracle answer.',
+  })
+}
+
+export async function runCursorForge(userPrompt: string, settings: LlmSettings): Promise<CursorRunResult> {
+  const q = userPrompt.replace(/\s+/g, ' ').trim()
+  if (!q) throw new Error('Describe the adventurer before asking Cursor to forge them.')
+  return runCursorJob(buildCursorForgePrompt(q), settings, {
+    name: 'Hyrule Forge',
+    reuseAgent: false,
+    emptyError: 'Cursor returned an empty character sheet.',
+  })
+}
+
+async function runCursorJob(
+  prompt: string,
+  settings: LlmSettings,
+  opts: { name: string; reuseAgent: boolean; emptyError: string },
+): Promise<CursorRunResult> {
   const key = settings.apiKey.trim()
   if (!key) {
     throw new Error(
-      `Paste a Cursor API key from ${CURSOR_DASHBOARD_KEYS}. Oracle questions then use your Cursor tokens and can search this campaign repo.`,
+      `Paste a Cursor API key from ${CURSOR_DASHBOARD_KEYS}. Character forge uses your Cursor Cloud Agent, not another model.`,
     )
   }
 
-  const prompt = buildCursorPrompt(messages)
-  const existing = settings.cursorAgentId?.trim()
-  let agentId = existing || ''
+  let agentId = opts.reuseAgent ? settings.cursorAgentId?.trim() || '' : ''
   let runId = ''
 
-  if (existing) {
+  if (agentId) {
     try {
-      const follow = await createFollowUp(existing, prompt, settings)
+      const follow = await createFollowUp(agentId, prompt, settings)
       agentId = follow.agentId
       runId = follow.runId
     } catch (err) {
@@ -82,13 +121,13 @@ export async function runCursorOracle(
   }
 
   if (!agentId || !runId) {
-    const created = await createAgent(prompt, settings)
+    const created = await createAgent(prompt, settings, opts.name)
     agentId = created.agentId
     runId = created.runId
   }
 
   const text = await pollRun(agentId, runId, settings)
-  if (!text.trim()) throw new Error('Cursor returned an empty Oracle answer.')
+  if (!text.trim()) throw new Error(opts.emptyError)
   return { text, agentId, agentUrl: cursorAgentUrl(agentId) }
 }
 
@@ -106,10 +145,11 @@ export async function verifyCursorApiKey(settings: LlmSettings): Promise<string>
 async function createAgent(
   prompt: string,
   settings: LlmSettings,
+  name = 'Hyrule Oracle',
 ): Promise<{ agentId: string; runId: string }> {
   const body: Record<string, unknown> = {
     prompt: { text: prompt },
-    name: 'Hyrule Oracle',
+    name,
     autoCreatePR: false,
     workOnCurrentBranch: false,
   }

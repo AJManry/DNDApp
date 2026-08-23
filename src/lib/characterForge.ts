@@ -1,7 +1,7 @@
 import type { Character, InventoryItem, SkillScore } from '../types'
 import { ALL_SKILLS } from '../data/skills'
-import { isCursorProvider } from './cursorAgent'
-import { completeChat, loadLlmSettings, POLLINATIONS_CHAT_URL, type LlmSettings } from './llm'
+import { CURSOR_SCHEME, runCursorForge } from './cursorAgent'
+import { loadLlmSettings } from './llm'
 
 const ANCESTRIES: { match: RegExp; name: string; speed: number }[] = [
   { match: /\bsheikah\b/, name: 'Sheikah', speed: 30 },
@@ -283,6 +283,9 @@ export function parseCharacterReply(raw: string): CharacterDraft | null {
   try {
     const obj = JSON.parse(candidate.slice(start, end + 1)) as Record<string, unknown>
     if (!obj || typeof obj !== 'object') return null
+    if (typeof obj.answer === 'string' && !obj.name) {
+      return parseCharacterReply(obj.answer)
+    }
     const abilities = asRecord(obj.abilities)
     const inventory = Array.isArray(obj.inventory) ? obj.inventory : []
     const skills = Array.isArray(obj.proficientSkills)
@@ -335,78 +338,15 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : null
 }
 
-export function forgeSystemPrompt(): string {
-  return [
-    'You create a 3rd-level D&D 5e player character for a Legend of Zelda one-shot set in Hyrule (The Song of Time).',
-    'Ancestries: Hylian, Sheikah, Goron, Zora, Gerudo, Rito, Kokiri, Korok, Twili.',
-    'Give a Triforce virtue: Courage, Wisdom, or Power.',
-    'Reply with ONLY JSON, no markdown fence:',
-    '{"name":"","ancestry":"","className":"Ranger 3 (Gloom Walker)","virtue":"Courage","hp":24,"ac":14,"speed":30,',
-    '"abilities":{"str":10,"dex":16,"con":14,"int":10,"wis":14,"cha":8},"proficientSkills":["Stealth","Survival"],',
-    '"inventory":[{"name":"Shortbow","qty":1,"rarity":"common","notes":"+5 to hit","equipped":true}],',
-    '"notes":"two sentences of backstory"}',
-  ].join(' ')
-}
-
-function settingsForForge(settings: LlmSettings): LlmSettings {
-  if (isCursorProvider(settings)) {
-    return { ...settings, baseUrl: POLLINATIONS_CHAT_URL, model: 'openai', apiKey: '' }
-  }
-  return settings
-}
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('Character forge timed out')), ms)
-    promise.then(
-      (value) => {
-        clearTimeout(timer)
-        resolve(value)
-      },
-      (err) => {
-        clearTimeout(timer)
-        reject(err)
-      },
-    )
-  })
-}
-
 export async function generateCharacterFromPrompt(prompt: string): Promise<Character> {
   const q = prompt.replace(/\s+/g, ' ').trim()
-  const local = forgeFromPrompt(q)
-  if (!q) return local
-  try {
-    const raw = await withTimeout(
-      completeChat(
-        [
-          { role: 'system', content: forgeSystemPrompt() },
-          { role: 'user', content: q },
-        ],
-        settingsForForge(loadLlmSettings()),
-      ),
-      12000,
-    )
-    const draft = parseCharacterReply(raw)
-    if (!draft?.name) return local
-    const localSkills = local.skills.filter((s) => s.proficient).map((s) => s.name)
-    return assembleCharacter(
-      {
-        ...draft,
-        proficientSkills: draft.proficientSkills?.length ? draft.proficientSkills : localSkills,
-        inventory: draft.inventory?.length
-          ? draft.inventory
-          : local.inventory.map((it) => ({
-              name: it.name,
-              qty: it.qty,
-              rarity: it.rarity,
-              notes: it.notes,
-              equipped: it.equipped,
-            })),
-        notes: draft.notes || q,
-      },
-      q,
-    )
-  } catch {
-    return local
+  if (!q) throw new Error('Describe the adventurer before asking Cursor to forge them.')
+  const saved = loadLlmSettings()
+  const settings = { ...saved, baseUrl: CURSOR_SCHEME, cursorAgentId: '' }
+  const result = await runCursorForge(q, settings)
+  const draft = parseCharacterReply(result.text)
+  if (!draft?.name) {
+    throw new Error('Cursor replied, but the sheet was not valid JSON. Try the prompt again.')
   }
+  return assembleCharacter({ ...draft, notes: draft.notes || q }, q)
 }
