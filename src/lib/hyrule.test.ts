@@ -9,6 +9,7 @@ import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
 import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
 import { forgeFromPrompt, nameFromPrompt, parseCharacterReply } from './characterForge'
+import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
 import { pregens } from '../data/pregens'
 
 describe('search', () => {
@@ -205,5 +206,49 @@ describe('character forge', () => {
     const hero = forgeFromPrompt('a quiet traveler who still hears the Song of Time')
     expect(hero.ancestry).toBe('Hylian')
     expect(hero.className).toMatch(/Ranger/)
+  })
+})
+
+describe('player handouts', () => {
+  it('reads to-hit and damage dice from weapon notes', () => {
+    const attack = parseAttackFromNotes(
+      'Soldier’s longsword',
+      'Ordon / Kakariko blade. +5 to hit, 1d8+3 slashing.',
+    )
+    expect(attack?.hitRoll).toBe('d20+5')
+    expect(attack?.damageRoll).toBe('1d8+3')
+    expect(attack?.damageText).toMatch(/slashing/)
+    expect(attack?.instruction).toMatch(/d20\+5/)
+  })
+
+  it('keeps range on bows', () => {
+    const attack = parseAttackFromNotes('Shortbow', '+5 to hit, 1d6+3 piercing, 80/320.')
+    expect(attack?.range).toBe('80/320 ft')
+  })
+
+  it('parses a save DC feature', () => {
+    const [breath] = parseDcEffects(
+      'Swore an oath. Breath of the mountain: 15-ft cone, DC 12 Dex, 2d6 fire.',
+    )
+    expect(breath?.name).toMatch(/Breath/)
+    expect(breath?.hitRoll).toBe('DC 12 DEX')
+    expect(breath?.damageRoll).toBe('2d6')
+  })
+
+  it('builds Link a dice sheet without treating the Hylian Shield as a spell', () => {
+    const sheet = buildHandout(pregens[0])
+    expect(sheet.attacks.some((a) => a.name.includes('longsword'))).toBe(true)
+    expect(sheet.attacks.some((a) => /javelin/i.test(a.name))).toBe(true)
+    expect(sheet.attacks.some((a) => a.name === 'Shield' && a.kind === 'spell')).toBe(false)
+    expect(sheet.skills.find((s) => s.name === 'Athletics')?.roll).toBe('d20+5')
+    expect(sheet.saves.find((s) => s.name === 'STR')?.proficient).toBe(true)
+  })
+
+  it('lists Sheik’s prepared spells with the dice to roll', () => {
+    const sheet = buildHandout(pregens[1])
+    const missile = sheet.attacks.find((a) => a.name === 'Magic Missile')
+    expect(missile?.hitRoll).toBe('auto-hit')
+    expect(missile?.damageRoll).toBe('1d4+1')
+    expect(sheet.attacks.some((a) => a.name === 'Shatter')).toBe(true)
   })
 })

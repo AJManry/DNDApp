@@ -1,4 +1,4 @@
-export type TabId = 'play' | 'oracle' | 'maps' | 'party' | 'journal'
+export type TabId = 'play' | 'oracle' | 'maps' | 'party' | 'handouts' | 'journal'
 
 export type LoreKind =
   | 'location'

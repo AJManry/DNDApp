@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { HandoutsView } from './views/HandoutsView'
 import { JournalView } from './views/JournalView'
 import { MapsView } from './views/MapsView'
 import { OracleView } from './views/OracleView'
@@ -13,6 +14,7 @@ const TABS: { id: TabId; label: string; hint: string }[] = [
   { id: 'oracle', label: 'Oracle', hint: 'Ask the world' },
   { id: 'maps', label: 'Maps', hint: 'Tokens & range' },
   { id: 'party', label: 'Party', hint: 'Forge a hero' },
+  { id: 'handouts', label: 'Handouts', hint: 'Print & dice' },
   { id: 'journal', label: 'Chronicle', hint: 'Notes & recap' },
 ]
 
@@ -106,6 +108,7 @@ function Shell() {
           {state.tab === 'oracle' && <OracleView />}
           {state.tab === 'maps' && <MapsView />}
           {state.tab === 'party' && <PartyView />}
+          {state.tab === 'handouts' && <HandoutsView />}
           {state.tab === 'journal' && <JournalView />}
         </section>
       </main>

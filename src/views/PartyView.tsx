@@ -78,6 +78,9 @@ export function PartyView() {
             >
               Blank sheet
             </button>
+            <button type="button" className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'handouts' })}>
+              Printable handouts
+            </button>
           </div>
         </form>
         {status ? <p className="hint">{status}</p> : null}
@@ -394,6 +397,9 @@ function Sheet({ character }: { character: Character }) {
             Character notes
             <textarea value={character.notes} onChange={(e) => patch({ notes: e.target.value })} />
           </label>
+          <button className="ghost" onClick={() => dispatch({ type: 'tab', tab: 'handouts' })}>
+            Print this party’s dice sheets
+          </button>
           <button className="danger" onClick={() => dispatch({ type: 'remove-character', id: character.id })}>
             Remove from party
           </button>
