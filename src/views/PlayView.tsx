@@ -1,8 +1,9 @@
 import { acts, scenes } from '../data/campaign'
 import { bestiary } from '../data/bestiary'
 import { battleMapForScene, campaignMaps } from '../data/maps'
+import { buildFightRoster } from '../lib/tactics'
 import { useHyrule } from '../state/store'
-import type { Scene, SceneOption, StatBlock } from '../types'
+import type { Combatant, Scene, SceneOption, StatBlock } from '../types'
 import { MapBoard } from './MapBoard'
 
 export function PlayView() {
@@ -257,54 +258,91 @@ function OptionCard({ option }: { option: SceneOption }) {
 function InitiativeBox() {
   const { state, dispatch } = useHyrule()
   const scene = scenes.find((s) => s.id === state.sceneId)
+  const foes = state.initiative.filter((c) => !c.isPlayer)
+  const downed = foes.filter((c) => c.hp <= 0).length
   return (
     <div className="dock-card">
-      <h3>Initiative</h3>
-      <button
-        className="ghost"
-        onClick={() => {
-          const players = state.party.map((p) => ({
-            id: p.id,
-            name: p.name,
-            initiative: 1 + Math.floor(Math.random() * 20),
-            hp: p.hp.current,
-            maxHp: p.hp.max,
-            ac: p.ac,
-            isPlayer: true,
-          }))
-          const foes = (scene?.encounterIds ?? []).flatMap((id) => {
-            const m = bestiary.find((b) => b.id === id)
-            if (!m) return []
-            return [
-              {
-                id: `${m.id}-${Math.random().toString(36).slice(2, 6)}`,
-                name: m.name,
-                initiative: 1 + Math.floor(Math.random() * 20),
-                hp: m.hp,
-                maxHp: m.hp,
-                ac: m.ac,
-                isPlayer: false,
-              },
-            ]
-          })
-          dispatch({
-            type: 'initiative',
-            list: [...players, ...foes].sort((a, b) => b.initiative - a.initiative),
-          })
-        }}
-      >
-        Roll party + scene foes
-      </button>
+      <h3>Initiative & HP</h3>
+      <p className="hint">
+        Roll the scene’s foes, then tap − / + to mark hits and healing. Enemy HP stays on this list until you roll
+        again.
+      </p>
+      <div className="init-actions">
+        <button
+          type="button"
+          className="ghost"
+          onClick={() => dispatch({ type: 'initiative', list: buildFightRoster(state.party, scene, true) })}
+        >
+          Roll party + scene foes
+        </button>
+        {state.initiative.length ? (
+          <button type="button" className="ghost" onClick={() => dispatch({ type: 'initiative', list: [] })}>
+            Clear
+          </button>
+        ) : null}
+      </div>
+      {foes.length ? (
+        <p className="hint">
+          {downed === foes.length ? 'All foes are at 0 hp.' : `${downed} of ${foes.length} foes at 0 hp.`}
+        </p>
+      ) : null}
       <ul className="init-list">
         {state.initiative.map((c) => (
-          <li key={c.id} className={c.isPlayer ? 'pc' : 'foe'}>
-            <span>
-              {c.name} <small>AC {c.ac}</small>
-            </span>
-            <strong>{c.initiative}</strong>
+          <li key={c.id} className={`${c.isPlayer ? 'pc' : 'foe'}${c.hp <= 0 ? ' down' : ''}`}>
+            <div className="init-who">
+              <span>
+                {c.name} <small>AC {c.ac}</small>
+              </span>
+              <strong title="Initiative">{c.initiative}</strong>
+            </div>
+            <CombatHp combatant={c} />
           </li>
         ))}
       </ul>
+    </div>
+  )
+}
+
+function CombatHp({ combatant }: { combatant: Combatant }) {
+  const { dispatch } = useHyrule()
+  const max = Math.max(1, Number(combatant.maxHp) || 1)
+  const current = Number.isFinite(combatant.hp) ? combatant.hp : 0
+  const setHp = (hp: number) =>
+    dispatch({
+      type: 'patch-combatant',
+      id: combatant.id,
+      patch: { hp: Math.max(0, Math.min(max, Math.round(hp))) },
+    })
+  const pct = Math.max(0, Math.min(100, (current / max) * 100))
+  return (
+    <div className="combat-hp">
+      <button type="button" className="ghost" aria-label={`Damage ${combatant.name} by 5`} onClick={() => setHp(current - 5)}>
+        −5
+      </button>
+      <button type="button" aria-label={`Damage ${combatant.name}`} onClick={() => setHp(current - 1)}>
+        −
+      </button>
+      <div className="hp combat-hp-bar">
+        <div className="hp-fill" style={{ width: `${pct}%` }} />
+        <label className="combat-hp-readout">
+          <span className="sr-only">{combatant.name} hit points</span>
+          <input
+            type="number"
+            min={0}
+            max={max}
+            value={current}
+            onChange={(e) => {
+              const n = Number(e.target.value)
+              if (!Number.isFinite(n)) return
+              setHp(n)
+            }}
+          />
+          <span>/{max}</span>
+        </label>
+      </div>
+      <button type="button" aria-label={`Heal ${combatant.name}`} onClick={() => setHp(current + 1)}>
+        +
+      </button>
     </div>
   )
 }

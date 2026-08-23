@@ -7,7 +7,7 @@ import { classifyIntent, createLoreFromPrompt, parseSageReply, buildSageMessages
 import { searchLore, tokenize } from './search'
 import { detectBiome, extractLabels, svgMap } from './mapStudio'
 import { rollDice } from './dice'
-import { distanceOnGrid, seedTokens, parseSpeed, formatRange } from './tactics'
+import { distanceOnGrid, seedTokens, parseSpeed, formatRange, buildFightRoster, encounterCount } from './tactics'
 import { forgeFromPrompt, nameFromPrompt, parseCharacterReply, assembleCharacter } from './characterForge'
 import { normalizeCharacter } from './combatKit'
 import { buildHandout, parseAttackFromNotes, parseDcEffects } from './handout'
@@ -134,6 +134,17 @@ describe('tactics board', () => {
     expect(keeseScene).toBeTruthy()
     const tokens = seedTokens('battle-kakariko', pregens, keeseScene)
     expect(tokens.filter((t) => t.role === 'foe' && t.refId === 'keese').length).toBe(4)
+  })
+
+  it('puts the same foe counts on the fight HP roster as on the board', () => {
+    const keese = scenes.find((s) => s.id === 's1-keese')
+    const roster = buildFightRoster(pregens, keese, false)
+    const foes = roster.filter((c) => !c.isPlayer)
+    expect(foes).toHaveLength(encounterCount('keese'))
+    expect(foes.every((c) => c.hp === c.maxHp && c.maxHp === 7)).toBe(true)
+    expect(roster.filter((c) => c.isPlayer)).toHaveLength(pregens.length)
+    const poeScene = scenes.find((s) => s.id === 's1-poes')
+    expect(buildFightRoster(pregens, poeScene, false).filter((c) => !c.isPlayer)).toHaveLength(3)
   })
 })
 

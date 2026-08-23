@@ -55,6 +55,7 @@ type Action =
   | { type: 'patch-item'; characterId: string; itemId: string; patch: Partial<InventoryItem> }
   | { type: 'remove-item'; characterId: string; itemId: string }
   | { type: 'initiative'; list: Combatant[] }
+  | { type: 'patch-combatant'; id: string; patch: Partial<Combatant> }
   | { type: 'roll'; expr: string; label?: string }
   | { type: 'add-map'; map: GeneratedMap }
   | { type: 'set-tactics'; board: MapTactics }
@@ -171,11 +172,25 @@ function reduce(state: AppState, action: Action): AppState {
       return { ...state, journal: action.text }
     case 'select-character':
       return { ...state, selectedCharacterId: action.id }
-    case 'patch-character':
+    case 'patch-character': {
+      const party = state.party.map((c) => (c.id === action.id ? { ...c, ...action.patch } : c))
+      const hp = action.patch.hp
       return {
         ...state,
-        party: state.party.map((c) => (c.id === action.id ? { ...c, ...action.patch } : c)),
+        party,
+        initiative: hp
+          ? state.initiative.map((row) =>
+              row.id === action.id
+                ? {
+                    ...row,
+                    hp: Number.isFinite(hp.current) ? hp.current : row.hp,
+                    maxHp: Number.isFinite(hp.max) ? hp.max : row.maxHp,
+                  }
+                : row,
+            )
+          : state.initiative,
       }
+    }
     case 'add-character': {
       const character = normalizeCharacter(action.character)
       return {
@@ -222,6 +237,19 @@ function reduce(state: AppState, action: Action): AppState {
       }
     case 'initiative':
       return { ...state, initiative: action.list }
+    case 'patch-combatant': {
+      const next = state.initiative.map((c) => (c.id === action.id ? { ...c, ...action.patch } : c))
+      const row = next.find((c) => c.id === action.id)
+      if (!row?.isPlayer || action.patch.hp == null) return { ...state, initiative: next }
+      const hp = Math.max(0, Number(action.patch.hp) || 0)
+      return {
+        ...state,
+        initiative: next,
+        party: state.party.map((p) =>
+          p.id === row.id ? { ...p, hp: { ...p.hp, current: Math.min(p.hp.max, hp) } } : p,
+        ),
+      }
+    }
     case 'roll': {
       const rolled = rollDice(action.expr)
       return {

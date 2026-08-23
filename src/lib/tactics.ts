@@ -1,7 +1,7 @@
 import { asset } from './assets'
 import { bestiary } from '../data/bestiary'
 import { isSceneBattleBoard } from '../data/maps'
-import type { Character, MapTactics, MapToken, Scene, TokenRole } from '../types'
+import type { Character, Combatant, MapTactics, MapToken, Scene, TokenRole } from '../types'
 
 const PC_COLORS = ['#8fd4dc', '#e8943a', '#f6c56a', '#3d9b94', '#c8eef2']
 const NPC_COLOR = '#8fd4dc'
@@ -88,7 +88,7 @@ const MAP_NPCS: Record<string, { id: string; name: string; speed: number; portra
   ],
 }
 
-function encounterCount(monsterId: string): number {
+export function encounterCount(monsterId: string): number {
   if (monsterId === 'keese') return 4
   if (monsterId === 'poe' || monsterId === 'bokoblin' || monsterId === 'deku-baba' || monsterId === 'bubble') return 3
   if (monsterId === 'wolfos' || monsterId === 'lizalfos') return 2
@@ -161,4 +161,39 @@ export function formatRange(feet: number, squares: number, speed?: number): stri
   const sq = Number.isInteger(squares) ? String(squares) : squares.toFixed(1)
   const over = speed != null && feet > speed ? ` · over speed (${speed} ft)` : ''
   return `${feet} ft (${sq} sq)${over}`
+}
+
+function d20(): number {
+  return 1 + Math.floor(Math.random() * 20)
+}
+
+export function buildFightRoster(party: Character[], scene?: Scene | null, rollInit = true): Combatant[] {
+  const players: Combatant[] = party.map((p) => ({
+    id: p.id,
+    name: p.name,
+    initiative: rollInit ? d20() : 0,
+    hp: Number.isFinite(p.hp?.current) ? p.hp.current : p.hp?.max ?? 0,
+    maxHp: Math.max(1, Number(p.hp?.max) || 1),
+    ac: p.ac,
+    isPlayer: true,
+  }))
+  const foes: Combatant[] = []
+  for (const id of scene?.encounterIds ?? []) {
+    const monster = bestiary.find((b) => b.id === id)
+    const n = encounterCount(id)
+    const maxHp = Math.max(1, Number(monster?.hp) || 10)
+    for (let i = 0; i < n; i += 1) {
+      foes.push({
+        id: `foe-${id}-${i}`,
+        name: n > 1 ? `${monster?.name ?? id} ${i + 1}` : (monster?.name ?? id),
+        initiative: rollInit ? d20() : 0,
+        hp: maxHp,
+        maxHp,
+        ac: monster?.ac ?? 10,
+        isPlayer: false,
+      })
+    }
+  }
+  const list = [...players, ...foes]
+  return rollInit ? list.sort((a, b) => b.initiative - a.initiative) : list
 }
