@@ -179,7 +179,8 @@ h1 { font-size: 2.1rem; line-height: 1.15; }
 .scene-item.active { border-color: var(--gold); background: rgba(232, 148, 58, 0.12); color: var(--ink); }
 .scene-item.done { opacity: 0.55; }
 .scene-item.now { box-shadow: inset 3px 0 0 var(--gloom); }
-.play-main { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; }
+.play-main { display: flex; flex-direction: column; gap: 0.75rem; min-width: 0; }
+.play-main-body { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 1rem; min-width: 0; }
 .scene-card, .dock-card, .statblock, .pc-card, .sheet, .bubble, .thumb, .module-head {
   background: var(--panel);
   border: 1px solid var(--line);
@@ -248,6 +249,94 @@ h1 { font-size: 2.1rem; line-height: 1.15; }
 .statblock { padding: 0.9rem 1rem; }
 .sixstat { font-variant-numeric: tabular-nums; color: var(--muted); }
 .play-dock { display: flex; flex-direction: column; gap: 0.8rem; }
+.table-party {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  padding: 0.75rem 0.9rem 0.85rem;
+}
+.table-party-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 0.55rem;
+}
+.table-party-head h2 { font-size: 1.15rem; margin: 0; }
+.table-party-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.55rem;
+}
+.table-party-card {
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.4rem 0.5rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.table-party-card.active {
+  border-color: var(--gold);
+  background: rgba(232, 148, 58, 0.12);
+}
+.table-party-card.down { opacity: 0.55; }
+.table-party-select {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+}
+.table-party-select header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  align-items: baseline;
+}
+.table-party-select header span {
+  color: var(--gold-2);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.table-party-select p { margin: 0; color: var(--muted); font-size: 0.82rem; }
+.table-party-hp {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  gap: 0.25rem;
+  align-items: center;
+}
+.table-party-hp button { padding: 0.15rem 0.4rem; min-width: 1.8rem; }
+.table-party-hp .hp { margin: 0; height: 18px; }
+.table-party-skills { margin-top: 0.65rem; }
+.table-party-skills p { margin: 0 0 0.35rem; color: var(--cyan-2); font-size: 0.85rem; }
+.table-party-skills p span { color: var(--muted); font-weight: 400; }
+.table-party-skills ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.12rem 0.55rem;
+  max-height: 7.4rem;
+  overflow: auto;
+}
+.table-party-skills li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.table-party-skills li.pro { color: var(--ink); }
+.table-party-skills li.pro strong { color: var(--gold); }
 .dock-card { padding: 0.85rem 0.9rem; }
 .segments { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.3rem; }
 .seg { height: 16px; background: #2a2433; padding: 0; }
@@ -748,7 +837,7 @@ figcaption { padding: 0.5rem 0.8rem; color: var(--muted); font-size: 0.85rem; }
   .app { grid-template-columns: 1fr; }
   .rail { flex-direction: row; flex-wrap: wrap; }
   .tabs { flex-direction: row; flex: 1; overflow: auto; }
-  .play, .play-main, .oracle, .maps-head, .map-stage, .split, .journal, .sheet-top, .hp-edit, .abilities, .combat-kit, .combat-move, .tactics, .handout-split, .handout-abilities, .handout-skills, .handout-saves, .home-split {
+  .play, .play-main-body, .oracle, .maps-head, .map-stage, .split, .journal, .sheet-top, .hp-edit, .abilities, .combat-kit, .combat-move, .tactics, .handout-split, .handout-abilities, .handout-skills, .handout-saves, .home-split {
     grid-template-columns: 1fr;
   }
 }

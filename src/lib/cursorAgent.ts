@@ -56,7 +56,7 @@ export function buildCursorPrompt(messages: ChatMessage[]): string {
 
 export function buildCursorForgePrompt(userPrompt: string): string {
   return [
-    'You are forging a player character for a Legend of Zelda D&D 5e one-shot (The Song of Time) from inside a Cursor Cloud Agent.',
+    'You are forging a player character for a Legend of Zelda D&D 5e one-shot (The Song of Time — Ganondorf’s demon melody vs a temple-charged Ocarina of Time) from inside a Cursor Cloud Agent.',
     'This is a READ-ONLY lookup. Do not edit, create, delete, commit, or push files.',
     'Do not open a pull request. Do not run git write commands. Do not use computer-use.',
     'You MAY search this repository: Grep/Read src/data/pregens.ts, src/data/skills.ts, src/lib/characterForge.ts, src/types.ts, and src/data/lore.ts. Match the sheet shape of the pregens.',

@@ -6,12 +6,13 @@ import { CURSOR_DASHBOARD_KEYS } from '../lib/cursorAgent'
 import { loadLlmSettings } from '../lib/llm'
 import { useHyrule } from '../state/store'
 import type { Character, CombatMove, InventoryItem } from '../types'
+import { HpBar } from './HpBar'
 
 const CONDITIONS = ['Blinded', 'Charmed', 'Frightened', 'Grappled', 'Poisoned', 'Prone', 'Restrained', 'Stunned']
 
 const SUGGESTIONS = [
   'A Gerudo swordswoman who left the desert after twilight took her sister',
-  'A Zora prince from the Domain who followed the Song of Time inland',
+  'A Zora prince from the Domain who followed the ocarina’s call inland',
   'A Rito sharpshooter from the Flight Range with a great eagle bow',
   'A Sheikah monk from Kakariko who still serves Impa in secret',
   'A Goron paladin of Death Mountain sworn to the Triforce of Power',
@@ -130,22 +131,6 @@ export function PartyView() {
         })}
       </div>
       {selected ? <Sheet character={normalizeCharacter(selected)} /> : null}
-    </div>
-  )
-}
-
-function HpBar({ hp }: { hp?: { current?: number; max?: number } | null }) {
-  const max = Number(hp?.max)
-  const current = Number(hp?.current)
-  const safeMax = Number.isFinite(max) && max > 0 ? max : 1
-  const safeCurrent = Number.isFinite(current) ? current : 0
-  const pct = Math.max(0, Math.min(100, (safeCurrent / safeMax) * 100))
-  return (
-    <div className="hp">
-      <div className="hp-fill" style={{ width: `${pct}%` }} />
-      <span>
-        {safeCurrent}/{Number.isFinite(max) ? max : 0} hp
-      </span>
     </div>
   )
 }

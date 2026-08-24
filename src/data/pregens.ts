@@ -41,7 +41,7 @@ export const pregens: Character[] = [
     conditions: [],
     inspiration: false,
     deathSaves: { success: 0, fail: 0 },
-    notes: 'Hero of Hyrule in waiting. Kakariko farm-guard in a green tunic. Heard the Song of Time in a dream three nights running. Protective of the village well.',
+    notes: 'Hero of Hyrule in waiting. Kakariko farm-guard in a green tunic. Heard the ocarina in a dream three nights running. Protective of the village well.',
   },
   {
     id: 'sheik',
@@ -74,7 +74,7 @@ export const pregens: Character[] = [
     conditions: [],
     inspiration: false,
     deathSaves: { success: 0, fail: 0 },
-    notes: 'Sheikah agent from Hyrule Castle, bandaged and precise. Came south chasing a rumor that the Song of Time is older than written magic. Impa knows more than she says.',
+    notes: 'Sheikah agent from Hyrule Castle, bandaged and precise. Came south chasing a rumor that Ganondorf played a demon melody older than written magic. Impa knows more than she says.',
   },
   {
     id: 'saria',

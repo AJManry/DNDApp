@@ -26,10 +26,10 @@ const KINDS: { id: LoreKind | 'all'; label: string }[] = [
 
 const SUGGESTIONS = [
   'Who is Ganondorf, and how should I play him at the table?',
-  'Where is the Ocarina of Time and what does a true note do?',
+  'Where is the Ocarina of Time and how do the temples charge it?',
   'How does the Twilight Clock work if we linger in the Lost Woods?',
   'Walk me through the Forest Temple puzzles',
-  'Create a lakeside shrine to Lord Jabu-Jabu that still hears the Song of Time',
+  'Create a lakeside shrine to Lord Jabu-Jabu that still answers the ocarina',
   'Map of a Korok village in giant roots',
 ]
 

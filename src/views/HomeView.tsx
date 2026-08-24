@@ -118,7 +118,7 @@ export function HomeView() {
           <p>{CAMPAIGN.ending}</p>
         </section>
         <section>
-          <h2>Pregenerated chorus</h2>
+          <h2>Pregenerated heroes</h2>
           <ul className="home-pregens">
             {pregens.map((p) => (
               <li key={p.id}>

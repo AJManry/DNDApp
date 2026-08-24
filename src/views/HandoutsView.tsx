@@ -57,7 +57,7 @@ function HandoutCard({ sheet }: { sheet: PlayerHandout }) {
     <article className="handout-card">
       <header className="handout-top">
         <div>
-          <p className="handout-kicker">The Song of Time · player sheet</p>
+          <p className="handout-kicker">Hyrule · player sheet</p>
           <h2>{sheet.name}</h2>
           <p>
             {sheet.subtitle}

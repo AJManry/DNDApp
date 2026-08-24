@@ -5,6 +5,7 @@ import { buildFightRoster } from '../lib/tactics'
 import { useHyrule } from '../state/store'
 import type { Combatant, Scene, SceneOption, StatBlock } from '../types'
 import { MapBoard } from './MapBoard'
+import { TableParty } from './TableParty'
 
 export function PlayView() {
   const { state, dispatch } = useHyrule()
@@ -69,6 +70,8 @@ export function PlayView() {
         </ol>
       </div>
       <div className="play-main">
+        <TableParty />
+        <div className="play-main-body">
         <article className="scene-card">
           <header>
             <span className="pill">Act {scene.act}</span>
@@ -152,6 +155,7 @@ export function PlayView() {
           <RulesStrip />
           <InitiativeBox />
         </aside>
+        </div>
       </div>
     </div>
   )

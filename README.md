@@ -15,15 +15,15 @@ The built site is published on the `gh-pages` branch. After you enable GitHub Pa
 
 ## The Song of Time
 
-3rd-level D&D 5e, 3–5 players, about three hours, using Zelda names and places.
+3rd-level D&D 5e, 3–5 players, about three hours, using Zelda names and places. Ganondorf played a demon melody; only a temple-charged Ocarina of Time can break it.
 
-1. **Kakariko Village** — a harvest village that forgot its song; Impa and Navi  
-2. **Lost Woods** — three Triforce trails, Koroks, Saria’s Meadow  
-3. **Forest Temple** — keys, puzzles, the Hero’s Shade, Armogohma  
-4. **Sacred Realm** — twilight duel with Ganondorf  
+1. **Kakariko Village** — a harvest that cannot start; Impa, Navi, and the ocarina  
+2. **Lost Woods** — three shrine trails that charge the ocarina, Koroks, Saria’s Meadow  
+3. **Forest Temple** — keys, puzzles, the Hero’s Shade, Armogohma’s temple charge  
+4. **Sacred Realm** — last charges at the standing stones, then a twilight duel with Ganondorf  
 5. **Dawn over Hyrule** — epilogue
 
-Pregenerated adventurers (Link, Sheik, Saria, Darunia), stat blocks, boxed text, and a Twilight Clock are built into the **Table** tab.
+Pregenerated adventurers (Link, Sheik, Saria, Darunia), stat blocks, boxed text, a party strip for hit points and skills, and a Twilight Clock are built into the **Table** tab.
 
 ## Oracle via Cursor
 

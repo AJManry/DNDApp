@@ -141,7 +141,7 @@ export const bestiary: StatBlock[] = [
     actions: [
       {
         name: 'Cursed Ram',
-        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) bludgeoning plus 3 (1d6) fire or cold damage, and the target is cursed until the end of its next turn: it has disadvantage on its next attack roll (a true note ends the curse early).',
+        text: 'Melee Weapon Attack: +5 to hit, reach 5 ft., one target. Hit: 6 (1d6 + 3) bludgeoning plus 3 (1d6) fire or cold damage, and the target is cursed until the end of its next turn: it has disadvantage on its next attack roll (playing the ocarina ends the curse early).',
       },
     ],
   },
@@ -299,8 +299,8 @@ export const bestiary: StatBlock[] = [
         text: 'Ranged Spell Attack: +6 to hit, range 40 ft., one target. Hit: 10 (2d6 + 3) necrotic damage, and the target’s speed is halved until the end of its next turn.',
       },
       {
-        name: 'Unmake the Measure (Recharge 5–6, phase 2)',
-        text: 'Twilight crashes across the Sacred Realm. Each enemy within 30 feet must make a DC 14 Constitution save, taking 18 (4d8) necrotic damage on a failure or half on a success. A creature that has sung or played a verse of the Song of Time this encounter has advantage.',
+        name: 'Unmake the Charge (Recharge 5–6, phase 2)',
+        text: 'Twilight crashes across the Sacred Realm. Each enemy within 30 feet must make a DC 14 Constitution save, taking 18 (4d8) necrotic damage on a failure or half on a success. A creature that has played the charged ocarina this encounter has advantage.',
       },
     ],
     legendary: [

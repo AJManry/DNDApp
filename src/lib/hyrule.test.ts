@@ -394,7 +394,7 @@ describe('one-shot briefing', () => {
     const door = scenes.find((s) => s.id === 's3-door')
     expect(door?.boxedText).toMatch(/vine/i)
     expect(door?.options?.length).toBeGreaterThanOrEqual(3)
-    expect(door?.whatsHappening).toMatch(/true note/i)
+    expect(door?.whatsHappening).toMatch(/ocarina/i)
   })
 
   it('gives every scene a summary and at least two ways through', () => {
