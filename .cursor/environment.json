@@ -1,0 +1,10 @@
+{
+  "name": "Hyrule",
+  "install": "npm ci",
+  "terminals": [
+    {
+      "name": "vite-dev",
+      "command": "npm run dev"
+    }
+  ]
+}
